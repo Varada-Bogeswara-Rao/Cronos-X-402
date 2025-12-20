@@ -3,18 +3,10 @@ import Merchant from "../models/Merchant";
 
 const router = Router();
 
-// Cache settings (Optional: use Redis for ultra-low latency)
-// const PRICE_CACHE_TTL = 300; 
-
-/**
- * POST /api/price-check
- * Optimized authoritative price lookup
- */
 router.post("/", async (req: Request, res: Response): Promise<any> => {
     try {
         const { merchantId, method, path } = req.body;
 
-        // 1. Faster Validation (Validation at the edge)
         if (!merchantId || !method || !path) {
             return res.status(400).json({
                 error: "INVALID_REQUEST",
@@ -22,51 +14,41 @@ router.post("/", async (req: Request, res: Response): Promise<any> => {
             });
         }
 
-        // 2. Normalize inputs immediately
-        const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-        const normalizedMethod = method.toUpperCase();
+        // 1. Find Merchant by ID first (Keep it simple to debug)
+        const merchant = await Merchant.findOne({ merchantId }).lean();
 
-        // 3. High Performance Query (Projection & Filtering)
-        // Instead of fetching the WHOLE merchant object and then searching the array in JS,
-        // we use MongoDB's $elemMatch to find ONLY the specific route we need.
-        const merchant = await Merchant.findOne(
-            { 
-                merchantId, 
-                "status.active": true,
-                "status.suspended": false,
-                api: { 
-                    $elemMatch: { 
-                        "routes.path": normalizedPath, 
-                        "routes.method": normalizedMethod 
-                    } 
-                } 
-            },
-            {
-                // Projection: Only fetch the fields we actually need
-                "merchantId": 1,
-                "wallet.address": 1,
-                "wallet.network": 1,
-                "business.name": 1,
-                "api.routes.$": 1 // Only return the matching route from the array
-            }
-        ).lean();
-
-        // 4. Detailed Error Reporting for Developers
         if (!merchant) {
-            // Check if merchant exists at all to provide better error feedback
-            const merchantExists = await Merchant.exists({ merchantId });
-            if (!merchantExists) {
-                return res.status(404).json({ error: "MERCHANT_NOT_FOUND" });
-            }
-            return res.status(403).json({ 
-                error: "ROUTE_UNAVAILABLE", 
-                message: "Route is not monetized or merchant is inactive" 
+            return res.status(404).json({ 
+                error: "MERCHANT_NOT_FOUND",
+                message: `No merchant found with ID: ${merchantId}`
             });
         }
 
-        // 5. Build authoritative response
-        const route = merchant.api.routes[0]; // Projection $ ensures the match is at index 0
+        // 2. Check Status
+        if (!merchant.status?.active || merchant.status?.suspended) {
+            return res.status(403).json({ error: "MERCHANT_INACTIVE" });
+        }
 
+        // 3. Robust Route Matching
+        // Extract base path (removes ?ids=bitcoin etc.)
+        const basePath = path.split('?')[0]; 
+        const normalizedReqPath = basePath.startsWith('/') ? basePath : `/${basePath}`;
+        const normalizedMethod = method.toUpperCase();
+
+        const route = merchant.api.routes.find((r: any) => {
+            const dbPath = r.path.startsWith('/') ? r.path : `/${r.path}`;
+            return dbPath === normalizedReqPath && r.method.toUpperCase() === normalizedMethod;
+        });
+
+        if (!route) {
+            console.log(`[DEBUG] Route mismatch. Req: ${normalizedReqPath}. DB has:`, merchant.api.routes.map(r => r.path));
+            return res.status(404).json({ 
+                error: "ROUTE_NOT_REGISTERED",
+                message: `The path ${normalizedReqPath} is not monetized by this merchant.`
+            });
+        }
+
+        // 4. Return Authoritative Data
         return res.status(200).json({
             merchantId: merchant.merchantId,
             price: route.price,
@@ -79,8 +61,8 @@ router.post("/", async (req: Request, res: Response): Promise<any> => {
     } catch (error: any) {
         console.error("[PRICE_CHECK_ERROR]", error.message);
         return res.status(500).json({
-            error: "PRICE_ORACLE_FAULT",
-            message: "Internal gateway error during price lookup"
+            error: "INTERNAL_ERROR",
+            message: error.message
         });
     }
 });

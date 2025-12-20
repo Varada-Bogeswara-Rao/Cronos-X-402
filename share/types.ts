@@ -9,5 +9,6 @@ export interface PaymentRequest {
 
 export interface WalletContext {
     network: string;
+    merchantId?: string;
     pendingYield?: number; // mock for now
 }
