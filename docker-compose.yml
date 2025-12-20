@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   mongodb:
     image: mongo:latest
@@ -6,6 +5,16 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+
+  gateway-server:
+    build: ./server
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/cronos-merchant-gateway
+      - CRONOS_RPC_URL=https://evm-t3.cronos.org
+    depends_on:
+      - mongodb
 
 volumes:
   mongo-data:

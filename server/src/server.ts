@@ -1,43 +1,61 @@
-import express from 'express';
+import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import connectDB from './db';
+
+// Import your routes
 import merchantRoutes from './routes/merchantRoutes';
 import priceCheck from './routes/priceCheck';
 import verifyPayment from './facilitator/verifyPayment';
-import paidProxyRouter from "./routes/paidProxy";
-import { paymentMiddleware } from "./middleware/paymentMiddleware";
+import gatewayRouter from "./routes/gateway";
 
 dotenv.config();
 
-const app = express();
+// 1. Environment Validation
+const requiredEnv = ['MONGODB_URI', 'CRONOS_RPC_URL'];
+requiredEnv.forEach((env) => {
+  if (!process.env[env]) {
+    console.error(` Missing environment variable: ${env}`);
+    process.exit(1);
+  }
+});
+
+// 2. Correct Initialization 
+const app: Application = express(); 
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// 3. Security & Middleware
+app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10kb' }));
 
-// Database Connection
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100
+});
+app.use('/api/', limiter);
+
+// 4. Database & Routes
 connectDB();
 
-// Routes
 app.use('/api/merchants', merchantRoutes);
 app.use('/api/price-check', priceCheck);
-app.use('/api', verifyPayment);
-app.use(
-    "/api",
-    paymentMiddleware({
-        merchantId: "60fa3d1c-8357-496b-a312-fe41c5cd2909",
-        gatewayUrl: "http://localhost:5000",
-        facilitatorUrl: "http://localhost:5000",
-        network: "cronos-testnet"
-    })
-    ,
-    paidProxyRouter
-);
+app.use('/api/facilitator', verifyPayment);
+app.use('/api', gatewayRouter);
 
-app.get('/', (req, res) => {
-    res.send('Cronos Merchant Gateway API');
+app.get('/', (req: Request, res: Response) => {
+    res.json({ status: 'online', service: 'Cronos Merchant Gateway' });
+});
+
+// 5. Global Error Handler
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
+    res.status(err.status || 500).json({
+        error: true,
+        message: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message
+    });
 });
 
 app.listen(PORT, () => {

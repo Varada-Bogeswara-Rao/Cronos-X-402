@@ -39,3 +39,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# Secrets
+.env
+.env.local
+
+# Dependencies
+node_modules/
+dist/
+build/
+
+# Docker logs
+*.log
+docker-compose.override.yml
+
+# OS files
+.DS_Store
+Thumbs.db

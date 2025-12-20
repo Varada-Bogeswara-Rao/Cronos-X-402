@@ -39,14 +39,24 @@ export interface IMerchant extends Document {
 }
 
 const MerchantSchema: Schema = new Schema({
-    merchantId: { type: String, required: false }, // Generated via UUID if needed
+    merchantId: {
+        type: String,
+        required: true,
+        unique: true,
+        index: true // ⚡️ Primary lookup key
+    },
     business: {
-        name: { type: String, required: true },
+        name: { type: String, required: true, trim: true },
         description: { type: String },
-        contactEmail: { type: String, required: true }
+        contactEmail: { type: String, required: true, lowercase: true }
     },
     wallet: {
-        address: { type: String, required: true },
+        address: {
+            type: String,
+            required: true,
+            lowercase: true,
+            index: true // ⚡️ High performance lookup for owner-based stats
+        },
         network: { type: String, enum: ['cronos-mainnet', 'cronos-testnet'], default: 'cronos-testnet' }
     },
     api: {
@@ -67,13 +77,13 @@ const MerchantSchema: Schema = new Schema({
         apiKeyHash: { type: String }
     },
     status: {
-        active: { type: Boolean, default: true },
+        active: { type: Boolean, default: true, index: true },
         suspended: { type: Boolean, default: false }
-    },
-    metadata: {
-        createdAt: { type: Date, default: Date.now },
-        updatedAt: { type: Date, default: Date.now }
     }
+}, {
+    timestamps: true // ⚡️ Automatically manages createdAt and updatedAt
 });
+
+MerchantSchema.index({ "merchantId": 1, "api.routes.path": 1, "api.routes.method": 1 });
 
 export default mongoose.model<IMerchant>('Merchant', MerchantSchema);
