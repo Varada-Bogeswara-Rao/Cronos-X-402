@@ -20,7 +20,7 @@ const getProvider = () => {
 const canonicalPath = (path: string) =>
     path.replace(/\/$/, "") || "/";
 
-router.post("/facilitator/verify", async (req: Request, res: Response) => {
+router.post("/verify", async (req: Request, res: Response) => {
     try {
         const merchantId = req.headers["x-merchant-id"] as string;
 
