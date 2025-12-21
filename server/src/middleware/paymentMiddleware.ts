@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import axios from "axios";
-import cache from "memory-cache"; 
+import cache from "memory-cache";
 
 export interface PaymentMiddlewareConfig {
     merchantId: string;
@@ -19,8 +19,10 @@ export function paymentMiddleware(config: PaymentMiddlewareConfig) {
     return async function (req: Request, res: Response, next: NextFunction) {
         try {
             const method = req.method.toUpperCase();
-            const path = req.route?.path || req.path;
-            const cacheKey = `price:${merchantId}:${method}:${path}`;
+            const path = req.path;
+
+            const cleanPath = req.path; // no query string
+            const cacheKey = `price:${merchantId}:${method}:${cleanPath}`;
 
             // ----------------------------
             // 1. Price Check with Caching
