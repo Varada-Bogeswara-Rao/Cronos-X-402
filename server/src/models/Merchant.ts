@@ -19,6 +19,7 @@ export interface IMerchant extends Document {
             price: string;
             currency: 'USDC' | 'CRO';
             description: string;
+            active: boolean;
         }[];
     };
     limits: {
@@ -66,7 +67,8 @@ const MerchantSchema: Schema = new Schema({
             path: { type: String, required: true },
             price: { type: String, required: true },
             currency: { type: String, enum: ['USDC', 'CRO'], required: true },
-            description: { type: String }
+            description: { type: String },
+            active: { type: Boolean, default: true }
         }]
     },
     limits: {

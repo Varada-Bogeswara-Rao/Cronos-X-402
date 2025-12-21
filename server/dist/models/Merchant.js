@@ -62,7 +62,8 @@ const MerchantSchema = new mongoose_1.Schema({
                 path: { type: String, required: true },
                 price: { type: String, required: true },
                 currency: { type: String, enum: ['USDC', 'CRO'], required: true },
-                description: { type: String }
+                description: { type: String },
+                active: { type: Boolean, default: true }
             }]
     },
     limits: {
