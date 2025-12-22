@@ -51,6 +51,14 @@ router.post("/", async (req: Request, res: Response) => {
     });
   }
 
+  // ⚡️ BUG FIX: Respect the "Active" Status!
+  if (route.active === false) {
+    return res.status(400).json({
+      error: "ROUTE_DISABLED",
+      message: "This route is currently disabled by the merchant."
+    });
+  }
+
   return res.json({
     merchantId,
     price: route.price,
