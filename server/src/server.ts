@@ -23,7 +23,7 @@ requiredEnv.forEach((env) => {
 });
 
 // 2. Correct Initialization 
-const app: Application = express(); 
+const app: Application = express();
 const PORT = process.env.PORT || 5000;
 
 // 3. Security & Middleware
@@ -40,24 +40,33 @@ app.use('/api/', limiter);
 // 4. Database & Routes
 connectDB();
 
+import analyticsRouter from './routes/analytics';
+import transactionsRouter from './routes/transactions';
+
+// ...
+
 app.use('/api/merchants', merchantRoutes);
 app.use('/api/price-check', priceCheck);
 app.use('/api/facilitator', verifyPayment);
 app.use('/api', gatewayRouter);
 
+// [NEW] Dashboard Analytics & Data
+app.use('/api/analytics', analyticsRouter);
+app.use('/api/transactions', transactionsRouter);
+
 app.get('/', (req: Request, res: Response) => {
-    res.json({ status: 'online', service: 'Cronos Merchant Gateway' });
+  res.json({ status: 'online', service: 'Cronos Merchant Gateway' });
 });
 
 // 5. Global Error Handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-    console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
-    res.status(err.status || 500).json({
-        error: true,
-        message: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message
-    });
+  console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
+  res.status(err.status || 500).json({
+    error: true,
+    message: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message
+  });
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

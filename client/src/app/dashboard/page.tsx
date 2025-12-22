@@ -5,21 +5,47 @@ import { useAccount } from "wagmi";
 import MerchantForm from "@/components/MerchantForm";
 import IntegrationDashboard from "@/components/IntegrationDashboard";
 import { Loader2 } from "lucide-react";
+import { api } from "@/lib/api";
 
 export default function DashboardPage() {
     const { address, isConnected } = useAccount();
     const [merchantId, setMerchantId] = useState<string | null>(null);
+    const [checkingStatus, setCheckingStatus] = useState(false);
     const [isHydrated, setIsHydrated] = useState(false);
 
-    // Persistence & Hydration Logic
     useEffect(() => {
         setIsHydrated(true);
-        const stored = localStorage.getItem("merchantId");
-        if (stored) setMerchantId(stored);
     }, []);
 
+    // Lookup merchant status whenever address changes
+    useEffect(() => {
+        const checkStatus = async () => {
+            if (!address) {
+                setMerchantId(null);
+                return;
+            }
+
+            setCheckingStatus(true);
+            try {
+                // Call the lookup endpoint
+                const res = await api.get(`/api/merchants/lookup/${address}`);
+                setMerchantId(res.data.merchantId);
+            } catch (error) {
+                // If 404 or error, assume not registered
+                setMerchantId(null);
+            } finally {
+                setCheckingStatus(false);
+            }
+        };
+
+        if (isConnected && address) {
+            checkStatus();
+        } else {
+            setMerchantId(null);
+        }
+    }, [address, isConnected]);
+
     const handleSuccess = (id: string) => {
-        localStorage.setItem("merchantId", id);
         setMerchantId(id);
     };
 
@@ -43,6 +69,17 @@ export default function DashboardPage() {
                 </div>
             </div>
         )
+    }
+
+    if (checkingStatus) {
+        return (
+            <div className="flex h-[50vh] items-center justify-center">
+                <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                    <p className="text-sm text-gray-500">Verifying merchant status...</p>
+                </div>
+            </div>
+        );
     }
 
     return (

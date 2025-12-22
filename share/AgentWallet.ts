@@ -7,11 +7,17 @@ export class AgentWallet {
     private spentToday = 0.0;
 
     private allowedMerchants = [
-        "60fa3d1c-8357-496b-a312-fe41c5cd2909"
+        "60fa3d1c-8357-496b-a312-fe41c5cd2909",
+        "2bbc88c5-afc3-4f67-93fb-c38df67fa028",
+        "eb16bd95-62b6-4e4d-bad0-c54b372ad822",
+        "ec85b480-0874-4c67-9b21-596d593394b0",
+        "b9805b9e-fa6c-4640-8470-f5b230dee6d4"
     ];
 
     private trustedFacilitators = [
-        "http://localhost:5000"
+        "http://localhost:5000",
+        "https://cronos-x-402-production.up.railway.app",
+        "https://cronos-x-402-production.up.railway.app/api/facilitator"
     ];
 
     private paidRequests = new Set<string>();
