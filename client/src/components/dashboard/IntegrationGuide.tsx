@@ -20,7 +20,15 @@ export default function IntegrationGuide({ merchantId }: { merchantId: string })
             {/* Background Gradients */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
-            <h2 className="text-xl font-bold text-white mb-6 relative z-10">Integration Guide</h2>
+            <div className="flex items-center justify-between mb-6 relative z-10">
+                <h2 className="text-xl font-bold text-white">Integration Guide</h2>
+                <a
+                    href={`/integration?merchantId=${merchantId}`}
+                    className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+                >
+                    View Full Docs <ExternalLink size={12} />
+                </a>
+            </div>
 
             {/* 1. Warning Banner */}
             <div className="mb-8 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-sm flex gap-3 relative z-10">

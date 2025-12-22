@@ -59,8 +59,19 @@ export default function IntegrationDashboard({ merchantId }: IntegrationDashboar
 
                 {/* RIGHT COLUMN (1/3) */}
                 <div className="lg:col-span-1 space-y-8">
-                    {/* 4. Integration Guide */}
-                    <IntegrationGuide merchantId={merchantId} />
+                    {/* 4. Documentation Link */}
+                    <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-2xl p-6 backdrop-blur-sm">
+                        <h3 className="text-lg font-bold text-white mb-2">Need Integration Help?</h3>
+                        <p className="text-sm text-gray-400 mb-4">
+                            Check out our complete integration guide, SDK documentation, and examples.
+                        </p>
+                        <a
+                            href={`/integration?merchantId=${merchantId}`}
+                            className="inline-flex items-center justify-center w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-colors text-sm"
+                        >
+                            View Docs & SDK
+                        </a>
+                    </div>
                 </div>
 
             </div>

@@ -45,14 +45,14 @@ import transactionsRouter from './routes/transactions';
 
 // ...
 
+// [NEW] Dashboard Analytics & Data - MUST BE BEFORE GATEWAY CATCH-ALL
+app.use('/api/analytics', analyticsRouter);
+app.use('/api/transactions', transactionsRouter);
+
 app.use('/api/merchants', merchantRoutes);
 app.use('/api/price-check', priceCheck);
 app.use('/api/facilitator', verifyPayment);
-app.use('/api', gatewayRouter);
-
-// [NEW] Dashboard Analytics & Data
-app.use('/api/analytics', analyticsRouter);
-app.use('/api/transactions', transactionsRouter);
+app.use('/api', gatewayRouter); // Catch-all for proxying
 
 app.get('/', (req: Request, res: Response) => {
   res.json({ status: 'online', service: 'Cronos Merchant Gateway' });
