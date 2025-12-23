@@ -1,8 +1,22 @@
 {
+  "name": "@cronos-merchant/sdk",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
   "dependencies": {
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
     "ethers": "^6.16.0"
+  },
+  "peerDependencies": {
+    "ethers": "^6.0.0"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

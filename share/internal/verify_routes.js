@@ -13,9 +13,9 @@ async function run() {
                 limits: { maxRequestsPerMinute: 60 }
             })
         });
-
-        if (!registerRes.ok) throw new Error(`Registration failed: ${await registerRes.text()}`);
-        const { merchantId } = await registerRes.json();
+if (!registerRes.ok) throw new Error(`Registration failed: ${await registerRes.text()}`);
+       
+         const { merchantId } = await registerRes.json();
         console.log("Merchant ID:", merchantId);
 
         console.log("2. Adding Route...");

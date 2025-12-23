@@ -38,7 +38,7 @@ export function paymentMiddleware(config: PaymentMiddlewareConfig) {
                         method,
                         path: cleanPath   // ✅ FIX HERE
                     },
-                    { timeout: 5000 }
+                    { timeout: 15000 }
                 );
 
                 priceData = priceResponse.data;
@@ -50,9 +50,31 @@ export function paymentMiddleware(config: PaymentMiddlewareConfig) {
             // ----------------------------
             // 2. Proof Check
             // ----------------------------
-            const paymentProof = req.headers["x-payment-proof"];
+            // ----------------------------
+            // 2. Proof Check
+            // ----------------------------
+            // ----------------------------
+            // 2. Proof Check
+            // ----------------------------
+            const paymentProof = req.headers["x-payment-proof"] as string;
+            const payer = req.headers["x-payment-payer"] as string;
+            const nonce = req.headers["x-payment-nonce"] as string;
+            const route = req.headers["x-payment-route"] as string;
+
+            if (paymentProof) {
+                console.log("[MIDDLEWARE] Payment headers received:", {
+                    proof: paymentProof.substring(0, 10) + "...",
+                    payer,
+                    nonce,
+                    route
+                });
+            }
 
             if (!paymentProof) {
+                // Generate Replay Protection Nonce
+                const nonce = Math.random().toString(36).substring(7);
+                const chainId = network === "cronos-mainnet" ? "25" : "338"; // 338 is Testnet
+
                 return res.status(402)
                     .set({
                         "X-Payment-Required": "true",
@@ -62,7 +84,11 @@ export function paymentMiddleware(config: PaymentMiddlewareConfig) {
                         "X-Payment-PayTo": payTo,
                         "X-Merchant-ID": merchantId,
                         "X-Facilitator-URL": facilitatorUrl,
-                        "X-Payment-Description": description
+                        "X-Payment-Description": description,
+                        // [NEW] Replay Protection & Strong Typing
+                        "X-Nonce": nonce,
+                        "X-Chain-ID": chainId,
+                        "X-Route": `${method} ${cleanPath}`
                     })
                     .json({
                         error: "PAYMENT_REQUIRED",

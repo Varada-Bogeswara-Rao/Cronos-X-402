@@ -1,8 +1,8 @@
 // demo.ts
 import "dotenv/config";
-import { AgentWallet } from "./AgentWallet";
-import { CronosUsdcExecutor } from "./CronosUsdcExecutor";
-import { x402Request } from "./x402ToolClient";
+import { AgentWallet } from "./internal/AgentWallet";
+import { CronosUsdcExecutor } from "./internal/CronosUsdcExecutor";
+import { x402Request } from "./internal/x402ToolClient";
 
 async function run() {
   // --------------------------------------------------
@@ -15,7 +15,7 @@ async function run() {
   // If merchant is deployed, use that instead:
   // const MERCHANT_API_URL = "https://<merchant-backend>.up.railway.app";
 
-  const TARGET_PATH = "/users";
+  const TARGET_PATH = "/photos";
   const FULL_URL = `${MERCHANT_API_URL}${TARGET_PATH}`;
 
   // --------------------------------------------------
@@ -42,62 +42,60 @@ async function run() {
   const executor = new CronosUsdcExecutor(
     RPC_URL,
     PRIVATE_KEY,
-    USDC_ADDR
+    USDC_ADDR,
+    338 // Expected Chain ID (Cronos Testnet)
   );
 
-  const wallet = new AgentWallet(executor);
-  const agentAddress = await wallet.getAddress();
+  // Derive address from private key for the wallet config
+  // (In a real scenario, the executor might expose this, but we'll re-derive here for simplicity)
+  // or add a getter to executor.
+  // Actually, CronosUsdcExecutor has a wallet but it's private.
+  // Let's just create a quick separate wallet instance to get the address, 
+  // OR since we are inside demo.ts, we can just use ethers directly if we import it, 
+  // OR we can assume we know it.
+
+  // Cleanest way without importing ethers in demo.ts if not needed:
+  // Add `getWalletAddress()` to CronosUsdcExecutor.
+  // BUT I don't want to edit Executor again if I can avoid it.
+
+  // Wait, I can just use a helper or trust the user knows it? No.
+  // Let's import ethers here properly.
+
+  const { ethers } = require("ethers");
+  const tempWallet = new ethers.Wallet(PRIVATE_KEY);
+  const agentAddress = tempWallet.address;
+
+  const wallet = new AgentWallet(agentAddress, executor);
 
   console.log("--------------------------------------------------");
   console.log(`🤖 AGENT ONLINE: ${agentAddress}`);
   console.log(`🎯 TARGET API: ${FULL_URL}`);
   console.log("--------------------------------------------------");
 
+  console.log(`[x402] Negotiating access for: ${TARGET_PATH}...`);
+
+  // --------------------------------------------------
+  // 4. x402 Autonomous Handshake
+  // --------------------------------------------------
+
+  // --------------------------------------------------
+  // 4. x402 Autonomous Handshake
+  // --------------------------------------------------
+
   try {
-    console.log(`[x402] Negotiating access for: ${TARGET_PATH}...`);
-
-    // --------------------------------------------------
-    // 4. x402 Autonomous Handshake
-    // --------------------------------------------------
-    // Flow:
-    // 1. Agent hits Merchant API
-    // 2. Merchant Middleware returns 402 + headers
-    // 3. Agent pays USDC on Cronos
-    // 4. Facilitator verifies
-    // 5. Merchant unlocks data
-    // --------------------------------------------------
-
     const result = await x402Request(
       FULL_URL,
       wallet,
       {
-        network: "cronos-testnet",
-
-        // IMPORTANT:
-        // This merchantId MUST match the one used in
-        // the merchant backend middleware configuration
+        chainId: 338,
         merchantId: "b9805b9e-fa6c-4640-8470-f5b230dee6d4"
-      }
+      },
+      {} // Empty options/headers
     );
-
-    // --------------------------------------------------
-    // 5. Display Result
-    // --------------------------------------------------
-
-    console.log("\n✅ [PAYMENT VERIFIED & DATA RECEIVED]");
-    console.log("--------------------------------------------------");
+    console.log(`✅ Success! Data Received:`);
     console.dir(result, { depth: null });
-    console.log("--------------------------------------------------");
-
   } catch (error: any) {
-    console.error("\n❌ [TRANSACTION FAILED]");
-
-    if (error.response) {
-      console.error(`Status: ${error.response.status}`);
-      console.error("Message:", error.response.data);
-    } else {
-      console.error(error.message);
-    }
+    console.error(`❌ Failed: ${error.message}`);
   }
 }
 
