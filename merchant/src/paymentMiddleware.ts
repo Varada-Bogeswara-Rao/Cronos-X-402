@@ -153,6 +153,12 @@ export function paymentMiddleware(config: PaymentMiddlewareConfig) {
 
         } catch (error: any) {
             console.error("[PAYMENT_MIDDLEWARE_CRASH]", error.response?.data || error.message);
+
+            // ✅ Forward explicit backend errors ("ROUTE_DISABLED", etc.)
+            if (error.response?.data?.error) {
+                return res.status(error.response.status).json(error.response.data);
+            }
+
             return res.status(500).json({
                 error: "PAYMENT_GATEWAY_ERROR",
                 message: "An internal error occurred during payment processing."

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import IntegrationGuide from "@/components/dashboard/IntegrationGuide";
+import IntegrationGuide from "@/components/IntegrationGuide";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -15,7 +15,7 @@ function IntegrationContent() {
 
 export default function IntegrationPage() {
     return (
-        <div className="min-h-screen bg-[#0a0f1c] text-white p-8">
+        <div className="min-h-screen text-white p-8">
             <div className="max-w-4xl mx-auto">
                 <Link
                     href="/dashboard"
@@ -31,15 +31,6 @@ export default function IntegrationPage() {
                 <Suspense fallback={<div className="text-gray-500">Loading integration details...</div>}>
                     <IntegrationContent />
                 </Suspense>
-
-                {/* Additional Documentation Content can go here */}
-                <div className="mt-12 prose prose-invert max-w-none">
-                    <h3>Next Steps</h3>
-                    <p>
-                        Once you have verified the payment flow using the `demo.ts` script, you can install the SDK (coming soon)
-                        or use the middleware logic in your own backend.
-                    </p>
-                </div>
             </div>
         </div>
     );

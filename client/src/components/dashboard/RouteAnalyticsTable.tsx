@@ -29,20 +29,20 @@ export default function RouteAnalyticsTable({ merchantId }: { merchantId: string
     if (routes.length === 0) return <div className="text-gray-500 text-sm py-4">No paid API usage yet.</div>;
 
     return (
-        <div className="overflow-x-auto">
+        <div className="glass-table-container">
             <table className="w-full text-left border-collapse">
                 <thead>
-                    <tr className="text-gray-400 text-xs border-b border-white/10">
-                        <th className="py-3 px-2">Path</th>
-                        <th className="py-3 px-2 text-right">Calls</th>
-                        <th className="py-3 px-2 text-right">Revenue</th>
-                        <th className="py-3 px-2 text-right">Avg Price</th>
-                        <th className="py-3 px-2 text-right">Last Used</th>
+                    <tr>
+                        <th className="glass-header py-3 px-2">Path</th>
+                        <th className="glass-header py-3 px-2 text-right">Calls</th>
+                        <th className="glass-header py-3 px-2 text-right">Revenue</th>
+                        <th className="glass-header py-3 px-2 text-right">Avg Price</th>
+                        <th className="glass-header py-3 px-2 text-right">Last Used</th>
                     </tr>
                 </thead>
                 <tbody>
                     {routes.map((route, i) => (
-                        <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors text-sm text-gray-300">
+                        <tr key={i} className="glass-row">
                             <td className="py-3 px-2 font-mono text-cyan-400">
                                 <span className="text-xs text-gray-500 mr-2">{route.method}</span>
                                 {route.path}

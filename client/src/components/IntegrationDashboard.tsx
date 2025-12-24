@@ -41,17 +41,19 @@ export default function IntegrationDashboard({ merchantId }: IntegrationDashboar
 
                     {/* 2. Monetized APIs & Route Stats */}
                     <section className="space-y-6">
-                        <MonetizedAPIs merchantId={merchantId} />
+                        <div className="bg-black/20 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <MonetizedAPIs merchantId={merchantId} />
+                        </div>
 
                         {/* Per-Route Analytics Table */}
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                        <div className="bg-black/20 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
                             <h3 className="text-lg font-semibold text-white mb-4">Route Performance</h3>
                             <RouteAnalyticsTable merchantId={merchantId} />
                         </div>
                     </section>
 
                     {/* 3. Recent Transactions */}
-                    <section>
+                    <section className="bg-black/20 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
                         <TransactionsTable merchantId={merchantId} />
                     </section>
 

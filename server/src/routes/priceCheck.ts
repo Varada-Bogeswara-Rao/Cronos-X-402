@@ -55,7 +55,7 @@ router.post("/", async (req: Request, res: Response) => {
   if (route.active === false) {
     return res.status(400).json({
       error: "ROUTE_DISABLED",
-      message: "This route is currently disabled by the merchant."
+      message: "Api has been disabled"
     });
   }
 

@@ -175,12 +175,12 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-xl font-bold text-gray-900">Monetized APIs</h2>
-                    <p className="text-sm text-gray-500">Manage pricing and access for your API endpoints</p>
+                    <h2 className="text-xl font-bold text-white">Monetized APIs</h2>
+                    <p className="text-sm text-gray-400">Manage pricing and access for your API endpoints</p>
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm shadow-blue-900/20"
                 >
                     <Plus size={18} />
                     Add API
@@ -189,214 +189,206 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
 
             {/* List / Empty State */}
             {routes.length === 0 ? (
-                <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 mb-4">
+                <div className="text-center py-12 border-2 border-dashed border-white/10 rounded-xl bg-white/5">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-500/10 text-blue-400 mb-4">
                         <Plus size={24} />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900">No Monetized APIs</h3>
-                    <p className="text-gray-500 max-w-sm mx-auto mt-1">
+                    <h3 className="text-lg font-medium text-white">No Monetized APIs</h3>
+                    <p className="text-gray-400 max-w-sm mx-auto mt-1">
                         Start monetizing your resources by adding your first API endpoint.
                     </p>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="mt-4 text-blue-600 font-medium hover:underline"
+                        className="mt-4 text-blue-400 font-medium hover:text-blue-300 hover:underline"
                     >
                         Create your first route
                     </button>
                 </div>
             ) : (
-                <div className="bg-white border boundary-gray-200 rounded-xl shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-gray-50 text-gray-500 border-b border-gray-100">
-                                <tr>
-                                    <th className="px-6 py-4 font-medium">Method</th>
-                                    <th className="px-6 py-4 font-medium">Path</th>
-                                    <th className="px-6 py-4 font-medium">Price</th>
-                                    <th className="px-6 py-4 font-medium">Status</th>
-                                    <th className="px-6 py-4 font-medium text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {routes.map((route) => (
-                                    <tr key={route._id} className="group hover:bg-gray-50/50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <span
-                                                className={`inline-flex items-center px-2.5 py-0.5 rounded font-medium text-xs
-                                                ${route.method === 'GET' ? 'bg-blue-100 text-blue-800' :
-                                                        route.method === 'POST' ? 'bg-green-100 text-green-800' :
-                                                            route.method === 'DELETE' ? 'bg-red-100 text-red-800' :
-                                                                'bg-orange-100 text-orange-800'}`}
-                                            >
-                                                {route.method}
+                <div className="glass-table-container">
+                    <table className="w-full text-left text-sm border-collapse">
+                        <thead>
+                            <tr>
+                                <th className="glass-header w-[100px]">Method</th>
+                                <th className="glass-header">Path</th>
+                                <th className="glass-header">Price</th>
+                                <th className="glass-header">Status</th>
+                                <th className="glass-header text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {routes.map((route) => (
+                                <tr key={route._id} className="glass-row group">
+                                    <td className="py-4 px-4">
+                                        <span
+                                            className={`inline-flex items-center px-2.5 py-0.5 rounded font-medium text-xs border
+                                                ${route.method === 'GET' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                                    route.method === 'POST' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                                        route.method === 'DELETE' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                                            'bg-orange-500/10 text-orange-400 border-orange-500/20'}`}
+                                        >
+                                            {route.method}
+                                        </span>
+                                    </td>
+                                    <td className="py-4 px-4 font-mono text-gray-300">
+                                        {route.path}
+                                    </td>
+                                    <td className="py-4 px-4 font-medium text-white">
+                                        {route.price} <span className="text-gray-500 text-xs">{route.currency}</span>
+                                    </td>
+                                    <td className="py-4 px-4">
+                                        {route.active ? (
+                                            <span className="flex items-center gap-1.5 text-green-400 text-xs font-medium">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]" />
+                                                Active
                                             </span>
-                                        </td>
-                                        <td className="px-6 py-4 font-mono text-gray-700">
-                                            {route.path}
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-gray-900">
-                                            {route.price} <span className="text-gray-500 text-xs">{route.currency}</span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {route.active ? (
-                                                <span className="flex items-center gap-1.5 text-green-600 text-xs font-medium">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                                                    Active
-                                                </span>
-                                            ) : (
-                                                <span className="flex items-center gap-1.5 text-gray-400 text-xs font-medium">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                                                    Disabled
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={() => {
-                                                        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
-                                                        // Ensure clean path concatenation
-                                                        const cleanPath = route.path.startsWith('/') ? route.path : `/${route.path}`;
-                                                        const sandboxUrl = `${baseUrl}/api/sandbox/${merchantId}${cleanPath}`;
-                                                        window.open(sandboxUrl, '_blank');
-                                                    }}
-                                                    className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
-                                                    title="Test in Sandbox"
-                                                >
-                                                    <div className="flex items-center gap-1">
-                                                        <span className="text-xs font-bold">TEST</span>
-                                                    </div>
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDisable(route)}
-                                                    className={`p-1.5 rounded-md transition-colors ${route.active ? 'text-gray-400 hover:text-orange-500 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50'}`}
-                                                    title={route.active ? "Disable" : "Enable"}
-                                                >
-                                                    {route.active ? <XCircle size={16} /> : <CheckCircle2 size={16} />}
-                                                </button>
-                                                <button
-                                                    onClick={() => openEditModal(route)}
-                                                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                                                    title="Edit configuration"
-                                                >
-                                                    <Edit2 size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(route._id)}
-                                                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                                                    title="Delete route"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div >
-            )
-            }
+                                        ) : (
+                                            <span className="flex items-center gap-1.5 text-gray-500 text-xs font-medium">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-gray-500" />
+                                                Disabled
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="py-4 px-4 text-right">
+                                        <div className="flex items-center justify-end gap-2 transition-opacity">
+                                            <button
+                                                onClick={() => {
+                                                    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+                                                    const cleanPath = route.path.startsWith('/') ? route.path : `/${route.path}`;
+                                                    const sandboxUrl = `${baseUrl}/api/sandbox/${merchantId}${cleanPath}`;
+                                                    window.open(sandboxUrl, '_blank');
+                                                }}
+                                                className="p-1.5 text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 rounded-md transition-colors"
+                                                title="Test in Sandbox"
+                                            >
+                                                <span className="text-xs font-bold">TEST</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDisable(route)}
+                                                className={`p-1.5 rounded-md transition-colors ${route.active ? 'text-gray-400 hover:text-orange-400 hover:bg-orange-500/10' : 'text-green-400 hover:bg-green-500/10'}`}
+                                                title={route.active ? "Disable" : "Enable"}
+                                            >
+                                                {route.active ? <XCircle size={16} /> : <CheckCircle2 size={16} />}
+                                            </button>
+                                            <button
+                                                onClick={() => openEditModal(route)}
+                                                className="p-1.5 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-md transition-colors"
+                                                title="Edit configuration"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(route._id)}
+                                                className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
+                                                title="Delete route"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {/* Config Modal */}
-            {
-                isModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                        <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl scale-100 transition-all">
-                            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                                <h3 className="text-lg font-bold text-gray-900">
-                                    {editingRoute ? "Edit API Route" : "Add New API"}
-                                </h3>
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl scale-100 transition-all">
+                        <div className="p-6 border-b border-white/10 flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-white">
+                                {editingRoute ? "Edit API Route" : "Add New API"}
+                            </h3>
+                            <button
+                                onClick={closeModal}
+                                className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="col-span-1">
+                                    <label className="block text-sm font-medium text-gray-400 mb-1">Method</label>
+                                    <select
+                                        {...register("method")}
+                                        disabled={!!editingRoute}
+                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                                    >
+                                        <option value="GET">GET</option>
+                                        <option value="POST">POST</option>
+                                        <option value="PUT">PUT</option>
+                                        <option value="DELETE">DELETE</option>
+                                    </select>
+                                </div>
+                                <div className="col-span-2">
+                                    <label className="block text-sm font-medium text-gray-400 mb-1">Path</label>
+                                    <input
+                                        {...register("path")}
+                                        disabled={!!editingRoute}
+                                        placeholder="/api/v1/resource"
+                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50 font-mono placeholder:text-gray-600"
+                                    />
+                                    {errors.path && <p className="text-red-400 text-xs mt-1">{errors.path.message}</p>}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-1">Price</label>
+                                    <div className="relative">
+                                        <input
+                                            {...register("price")}
+                                            placeholder="0.05"
+                                            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-600"
+                                        />
+                                    </div>
+                                    {errors.price && <p className="text-red-400 text-xs mt-1">{errors.price.message}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-1">Currency</label>
+                                    <select
+                                        {...register("currency")}
+                                        disabled
+                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-400 disabled:opacity-50"
+                                    >
+                                        <option value="USDC">USDC (Polygon/Cronos)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {editingRoute && (
+                                <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs rounded-lg">
+                                    Editing path or method is disabled to prevent breaking existing integrations. Delete and recreate if needed.
+                                </div>
+                            )}
+
+                            <div className="pt-4 flex gap-3">
                                 <button
+                                    type="button"
                                     onClick={closeModal}
-                                    className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                                    className="flex-1 px-4 py-2 border border-white/10 rounded-lg text-sm font-medium text-gray-300 hover:bg-white/5 transition-colors"
                                 >
-                                    <X size={20} />
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={submitting}
+                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20"
+                                >
+                                    {submitting && <Loader2 size={16} className="animate-spin" />}
+                                    {editingRoute ? "Save Changes" : "Create Route"}
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
-
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div className="col-span-1">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Method</label>
-                                        <select
-                                            {...register("method")}
-                                            disabled={!!editingRoute}
-                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
-                                        >
-                                            <option value="GET">GET</option>
-                                            <option value="POST">POST</option>
-                                            <option value="PUT">PUT</option>
-                                            <option value="DELETE">DELETE</option>
-                                        </select>
-                                    </div>
-                                    <div className="col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Path</label>
-                                        <input
-                                            {...register("path")}
-                                            disabled={!!editingRoute}
-                                            placeholder="/api/v1/resource"
-                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500 font-mono"
-                                        />
-                                        {errors.path && <p className="text-red-500 text-xs mt-1">{errors.path.message}</p>}
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-                                        <div className="relative">
-                                            <input
-                                                {...register("price")}
-                                                placeholder="0.05"
-                                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                            />
-                                        </div>
-                                        {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                                        <select
-                                            {...register("currency")}
-                                            disabled
-                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-gray-50 text-gray-500"
-                                        >
-                                            <option value="USDC">USDC (Polygon/Cronos)</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {editingRoute && (
-                                    <div className="p-3 bg-blue-50 text-blue-700 text-xs rounded-lg">
-                                        Editing path or method is disabled to prevent breaking existing integrations. Delete and recreate if needed.
-                                    </div>
-                                )}
-
-                                <div className="pt-4 flex gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={closeModal}
-                                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={submitting}
-                                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                    >
-                                        {submitting && <Loader2 size={16} className="animate-spin" />}
-                                        {editingRoute ? "Save Changes" : "Create Route"}
-                                    </button>
-                                </div>
-
-                            </form>
-                        </div>
+                        </form>
                     </div>
-                )
-            }
+                </div>
+            )}
         </div >
     );
 }

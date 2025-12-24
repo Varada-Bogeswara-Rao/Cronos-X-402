@@ -16,7 +16,7 @@ export default function IntegrationGuide({ merchantId }: { merchantId: string })
     };
 
     return (
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-sm relative overflow-hidden">
+        <div className="bg-black/20 border border-white/10 rounded-2xl p-8 backdrop-blur-sm relative overflow-hidden">
             {/* Background Gradients */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
@@ -50,7 +50,7 @@ export default function IntegrationGuide({ merchantId }: { merchantId: string })
                         { step: 4, title: "Verification", desc: "Middleware verifies receipt with Facilitator" },
                         { step: 5, title: "Access Granted", desc: "Your API returns the data" },
                     ].map((s, i) => (
-                        <div key={i} className="flex-1 bg-white/5 rounded-lg p-3 border border-white/5">
+                        <div key={i} className="flex-1 bg-black/20 rounded-lg p-3 border border-white/5">
                             <div className="text-xs font-mono text-cyan-400 mb-1">0{s.step}</div>
                             <div className="font-semibold text-gray-200 text-sm mb-0.5">{s.title}</div>
                             <div className="text-xs text-gray-500 leading-snug">{s.desc}</div>
@@ -62,7 +62,7 @@ export default function IntegrationGuide({ merchantId }: { merchantId: string })
             {/* 3. Middleware Configuration */}
             <div className="mb-10 relative z-10">
                 <h3 className="text-sm font-medium text-gray-400 mb-4 uppercase tracking-wider">Server Configuration</h3>
-                <div className="bg-black/40 rounded-xl border border-white/10 overflow-hidden">
+                <div className="bg-black/20 rounded-xl border border-white/10 overflow-hidden">
                     <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5">
                         <div className="flex items-center gap-2 text-xs text-gray-400">
                             <span className="text-blue-400">TypeScript</span>
@@ -98,7 +98,7 @@ export default function IntegrationGuide({ merchantId }: { merchantId: string })
             <div className="relative z-10">
                 <h3 className="text-sm font-medium text-gray-400 mb-4 uppercase tracking-wider">Test Your Integration</h3>
 
-                <div className="bg-black/40 rounded-xl border border-white/10 overflow-hidden">
+                <div className="bg-black/20 rounded-xl border border-white/10 overflow-hidden">
                     <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5">
                         <div className="flex items-center gap-2 text-xs text-gray-400">
                             <Terminal size={14} />

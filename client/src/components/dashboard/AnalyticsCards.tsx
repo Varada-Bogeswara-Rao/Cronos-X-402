@@ -30,7 +30,7 @@ export default function AnalyticsCards({ merchantId }: { merchantId: string }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* 1. Total Revenue */}
-            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+            <div className="glass-card p-6 rounded-2xl">
                 <h3 className="text-sm text-gray-400 mb-1">Total Revenue</h3>
                 <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
                     {Number(data.totalRevenue).toFixed(2)} USDC
@@ -38,7 +38,7 @@ export default function AnalyticsCards({ merchantId }: { merchantId: string }) {
             </div>
 
             {/* 2. Total Requests */}
-            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+            <div className="glass-card p-6 rounded-2xl">
                 <h3 className="text-sm text-gray-400 mb-1">Paid Requests</h3>
                 <div className="text-3xl font-bold text-white">
                     {data.totalRequests}
@@ -46,7 +46,7 @@ export default function AnalyticsCards({ merchantId }: { merchantId: string }) {
             </div>
 
             {/* 3. Avg Price */}
-            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+            <div className="glass-card p-6 rounded-2xl">
                 <h3 className="text-sm text-gray-400 mb-1">Avg Price</h3>
                 <div className="text-3xl font-bold text-white">
                     {Number(data.avgPrice).toFixed(2)} USDC
@@ -54,7 +54,7 @@ export default function AnalyticsCards({ merchantId }: { merchantId: string }) {
             </div>
 
             {/* 4. 24h Trend */}
-            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+            <div className="glass-card p-6 rounded-2xl">
                 <h3 className="text-sm text-gray-400 mb-1">Last 24h Revenue</h3>
                 <div className="text-3xl font-bold text-green-400">
                     +{Number(data.revenue24h).toFixed(2)} USDC

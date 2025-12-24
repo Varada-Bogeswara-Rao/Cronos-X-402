@@ -40,7 +40,7 @@ export default function TransactionsTable({ merchantId }: { merchantId: string }
     if (!merchantId) return null;
 
     return (
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+        <div className="glass-table-container">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-white">Recent Transactions</h2>
                 <div className="flex gap-2">
@@ -76,17 +76,17 @@ export default function TransactionsTable({ merchantId }: { merchantId: string }
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="text-gray-400 text-xs border-b border-white/10 uppercase tracking-wider">
-                                <th className="py-4 px-4">Date</th>
-                                <th className="py-4 px-4">Route</th>
-                                <th className="py-4 px-4">Amount</th>
-                                <th className="py-4 px-4">Tx Hash</th>
-                                <th className="py-4 px-4 text-right">Status</th>
+                            <tr>
+                                <th className="glass-header py-4 px-4">Date</th>
+                                <th className="glass-header py-4 px-4">Route</th>
+                                <th className="glass-header py-4 px-4">Amount</th>
+                                <th className="glass-header py-4 px-4">Tx Hash</th>
+                                <th className="glass-header py-4 px-4 text-right">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {transactions.map((tx) => (
-                                <tr key={tx._id} className="border-b border-white/5 hover:bg-white/5 transition-colors text-sm text-gray-300 group">
+                                <tr key={tx._id} className="glass-row group">
                                     <td className="py-4 px-4 text-gray-400 whitespace-nowrap">
                                         {new Date(tx.createdAt).toLocaleString()}
                                     </td>
