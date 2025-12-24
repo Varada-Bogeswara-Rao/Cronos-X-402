@@ -43,7 +43,7 @@ export default function EnhancedMerchantForm({ walletAddress, onSuccess }: Props
             };
 
             const res = await api.post("/api/merchants/register", payload);
-            alert("Merchant Registered! ID: " + res.data.merchantId);
+            alert("Merchant Registered! You can now manage your routes using your wallet signature.");
             if (onSuccess) onSuccess(res.data.merchantId);
         } catch (err) {
             console.error(err);

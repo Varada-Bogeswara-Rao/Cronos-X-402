@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { api } from "@/lib/api";
+import { useSignMessage } from 'wagmi';
 
 // --- Types ---
 
@@ -28,7 +29,7 @@ const routeSchema = z.object({
     method: z.enum(["GET", "POST", "PUT", "DELETE"]),
     path: z.string().startsWith("/", "Path must start with /").min(2, "Path is required"),
     price: z.string().regex(/^\d+(\.\d{1,6})?$/, "Invalid price format"),
-    currency: z.enum(["USDC", "CRO"]), // Allow CRO in schema to match backend type, even if UI restricts to USDC
+    currency: z.enum(["USDC", "CRO"]),
 });
 
 type RouteFormData = z.infer<typeof routeSchema>;
@@ -41,6 +42,9 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRoute, setEditingRoute] = useState<Route | null>(null);
     const [submitting, setSubmitting] = useState(false);
+
+    // Wagmi Signing Hook
+    const { signMessageAsync } = useSignMessage();
 
     // Form Setup
     const {
@@ -59,12 +63,29 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
         }
     });
 
+    // Helper: Generate Auth Headers
+    const getAuthHeaders = async () => {
+        const timestamp = Date.now().toString();
+        const message = `Update Routes for Merchant ${merchantId} at ${timestamp}`;
+
+        try {
+            const signature = await signMessageAsync({ message });
+            return {
+                'x-signature': signature,
+                'x-timestamp': timestamp,
+                'x-merchant-id': merchantId
+            };
+        } catch (error) {
+            console.error("Signing cancelled or failed", error);
+            throw new Error("User denied signature");
+        }
+    };
+
     // Fetch Routes
     const fetchRoutes = async () => {
         try {
             console.log("Fetching routes for:", merchantId);
             const res = await api.get(`/api/merchants/${merchantId}/routes`);
-            console.log("Routes fetched:", res.data);
             setRoutes(res.data);
         } catch (error) {
             console.error("Failed to fetch routes", error);
@@ -81,20 +102,22 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
     const onSubmit = async (data: RouteFormData) => {
         setSubmitting(true);
         try {
+            const headers = await getAuthHeaders();
+
             if (editingRoute) {
                 // UPDATE
                 await api.put(`/api/merchants/${merchantId}/routes/${editingRoute._id}`, {
                     price: data.price,
-                });
+                }, { headers });
             } else {
                 // CREATE
-                await api.post(`/api/merchants/${merchantId}/routes`, data);
+                await api.post(`/api/merchants/${merchantId}/routes`, data, { headers });
             }
             await fetchRoutes();
             closeModal();
         } catch (error) {
             console.error("Failed to save route", error);
-            // Ideally show toast here
+            alert("Failed to save route. Did you sign the message?");
         } finally {
             setSubmitting(false);
         }
@@ -102,10 +125,11 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
 
     const handleDisable = async (route: Route) => {
         try {
+            const headers = await getAuthHeaders();
             // Toggle active status
             await api.put(`/api/merchants/${merchantId}/routes/${route._id}`, {
                 active: !route.active,
-            });
+            }, { headers });
             fetchRoutes();
         } catch (error) {
             console.error("Failed to update status", error);
@@ -115,7 +139,8 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
     const handleDelete = async (routeId: string) => {
         if (!confirm("Are you sure you want to delete this route? This cannot be undone.")) return;
         try {
-            await api.delete(`/api/merchants/${merchantId}/routes/${routeId}`);
+            const headers = await getAuthHeaders();
+            await api.delete(`/api/merchants/${merchantId}/routes/${routeId}`, { headers });
             setRoutes(prev => prev.filter(r => r._id !== routeId));
         } catch (error) {
             console.error("Failed to delete route", error);

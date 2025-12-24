@@ -4,11 +4,16 @@ import { useSearchParams } from "next/navigation";
 import IntegrationGuide from "@/components/dashboard/IntegrationGuide";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 
-export default function IntegrationPage() {
+function IntegrationContent() {
     const searchParams = useSearchParams();
     const merchantId = searchParams.get("merchantId") || "YOUR_MERCHANT_ID";
 
+    return <IntegrationGuide merchantId={merchantId} />;
+}
+
+export default function IntegrationPage() {
     return (
         <div className="min-h-screen bg-[#0a0f1c] text-white p-8">
             <div className="max-w-4xl mx-auto">
@@ -23,7 +28,9 @@ export default function IntegrationPage() {
                 <h1 className="text-3xl font-bold mb-2">Integration Documentation</h1>
                 <p className="text-gray-400 mb-8">Complete guide to integrating Cronos x402 payments into your application.</p>
 
-                <IntegrationGuide merchantId={merchantId} />
+                <Suspense fallback={<div className="text-gray-500">Loading integration details...</div>}>
+                    <IntegrationContent />
+                </Suspense>
 
                 {/* Additional Documentation Content can go here */}
                 <div className="mt-12 prose prose-invert max-w-none">
