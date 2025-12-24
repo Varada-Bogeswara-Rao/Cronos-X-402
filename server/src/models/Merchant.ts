@@ -75,8 +75,8 @@ const MerchantSchema: Schema = new Schema({
         maxRequestsPerMinute: { type: Number, default: 60 }
     },
     security: {
-        ipWhitelist: [{ type: String }],
-        apiKeyHash: { type: String }
+        ipWhitelist: [{ type: String }]
+        // 🔒 API Keys replaced by Wallet Signatures
     },
     status: {
         active: { type: Boolean, default: true, index: true },

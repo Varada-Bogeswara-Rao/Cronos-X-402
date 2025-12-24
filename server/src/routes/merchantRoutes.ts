@@ -1,10 +1,67 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import crypto from 'crypto'; // 🔒 Node.js native crypto for hashing
+import { ethers } from 'ethers';
 import Merchant from '../models/Merchant';
 import { Transaction } from "../models/Transaction";
 
 const router = express.Router();
+
+// --------------------------------------------------------------------------
+// 🛡️ MIDDLEWARE: Verify Wallet Signature
+// --------------------------------------------------------------------------
+// The frontend must send headers:
+// x-signature: The signature of the message
+// x-timestamp: The timestamp included in the message
+// x-merchant-id: The merchant's ID
+//
+// Message Format: "Update Routes for Merchant <merchantId> at <timestamp>"
+// --------------------------------------------------------------------------
+const verifyWalletSignature = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const signature = req.headers['x-signature'] as string;
+        const timestamp = req.headers['x-timestamp'] as string;
+        const merchantId = req.params.merchantId || req.body.merchantId;
+
+        if (!signature || !timestamp || !merchantId) {
+            return res.status(401).json({ error: "MISSING_AUTH", message: "Missing signature, timestamp, or merchantId" });
+        }
+
+        // 1. Prevent Replay Attacks (Signature must be recent, e.g., within 5 mins)
+        const sentTime = parseInt(timestamp);
+        const now = Date.now();
+        if (isNaN(sentTime) || Math.abs(now - sentTime) > 5 * 60 * 1000) {
+            return res.status(401).json({ error: "EXPIRED_SIGNATURE", message: "Signature expired. Please try again." });
+        }
+
+        // 2. Fetch Merchant to get the REAL Wallet Address
+        // We trust the DB, not the user's input for the address
+        const merchant = await Merchant.findOne({ merchantId }).select('wallet.address');
+        if (!merchant) {
+            return res.status(404).json({ error: "MERCHANT_NOT_FOUND" });
+        }
+
+        // 3. Reconstruct the Message
+        const message = `Update Routes for Merchant ${merchantId} at ${timestamp}`;
+
+        // 4. Recover Address from Signature
+        const recoveredAddress = ethers.verifyMessage(message, signature);
+
+        // 5. Compare
+        if (recoveredAddress.toLowerCase() !== merchant.wallet.address.toLowerCase()) {
+            return res.status(403).json({
+                error: "INVALID_SIGNATURE",
+                message: "Wallet signature does not match the merchant owner."
+            });
+        }
+
+        next();
+
+    } catch (error) {
+        console.error("Signature Verification Error:", error);
+        return res.status(401).json({ error: "AUTH_FAILED", message: "Authentication failed" });
+    }
+};
+
 
 // POST /api/merchants/register
 router.post('/register', async (req: Request, res: Response): Promise<any> => {
@@ -28,16 +85,16 @@ router.post('/register', async (req: Request, res: Response): Promise<any> => {
             });
         }
 
-        // 3. Secure Key Generation
+        // 3. Create ID
         const merchantId = uuidv4();
-        const rawApiKey = `cmg_${crypto.randomBytes(24).toString('hex')}`; // Prefix for easier identification
-        const apiKeyHash = crypto.createHash('sha256').update(rawApiKey).digest('hex');
+        // 🔒 No more API Keys! We rely on wallet signatures.
 
         // 4. Persistence
         const newMerchant = new Merchant({
             merchantId,
             security: {
-                apiKeyHash: apiKeyHash, // Only store the hash!
+                // apiKeyHash removed
+                ipWhitelist: []
             },
             business,
             wallet: {
@@ -52,11 +109,10 @@ router.post('/register', async (req: Request, res: Response): Promise<any> => {
 
         await newMerchant.save();
 
-        // 5. Response (Send the rawApiKey ONLY ONCE)
+        // 5. Response
         res.status(201).json({
             merchantId,
-            apiKey: rawApiKey,
-            message: 'Merchant registered successfully. Please save your API Key; it will not be shown again.'
+            message: 'Merchant registered successfully. You can now manage routes using your wallet.'
         });
     } catch (error) {
         console.error("Registration Error:", error);
@@ -122,6 +178,7 @@ const canonicalizePath = (path: string): string => {
 };
 
 // GET /api/merchants/:merchantId/routes
+// Publicly readable so the dashboard (and paying users) can see what's available
 router.get("/:merchantId/routes", async (req: Request, res: Response): Promise<any> => {
     try {
         const { merchantId } = req.params;
@@ -137,7 +194,8 @@ router.get("/:merchantId/routes", async (req: Request, res: Response): Promise<a
 });
 
 // POST /api/merchants/:merchantId/routes
-router.post("/:merchantId/routes", async (req: Request, res: Response): Promise<any> => {
+// 🔒 Secured by Wallet Signature
+router.post("/:merchantId/routes", verifyWalletSignature, async (req: Request, res: Response): Promise<any> => {
     try {
         const { merchantId } = req.params;
         const { method, path, price, currency } = req.body;
@@ -167,7 +225,8 @@ router.post("/:merchantId/routes", async (req: Request, res: Response): Promise<
             path: cleanPath,
             price: price.toString(), // Ensure string
             currency,
-            description: ''
+            description: '',
+            active: true
         };
 
         merchant.api.routes.push(newRoute as any); // Type assertion if needed, schema allows this structure
@@ -181,10 +240,11 @@ router.post("/:merchantId/routes", async (req: Request, res: Response): Promise<
 });
 
 // PUT /api/merchants/:merchantId/routes/:routeId
-router.put("/:merchantId/routes/:routeId", async (req: Request, res: Response): Promise<any> => {
+// 🔒 Secured by Wallet Signature
+router.put("/:merchantId/routes/:routeId", verifyWalletSignature, async (req: Request, res: Response): Promise<any> => {
     try {
         const { merchantId, routeId } = req.params;
-        const { price, status } = req.body; // Only allowing price/status updates for now per requirements
+        const { price, status, active } = req.body;
 
         const merchant = await Merchant.findOne({ merchantId });
         if (!merchant) return res.status(404).json({ message: 'Merchant not found' });
@@ -193,28 +253,8 @@ router.put("/:merchantId/routes/:routeId", async (req: Request, res: Response): 
         if (!route) return res.status(404).json({ message: 'Route not found' });
 
         if (price !== undefined) route.price = price.toString();
-        // If we add status active/disabled locally to the subdoc in future (currently schema doesn't have it explicitly on route, but task implies it.
-        // Task says "Disable should NOT delete — just mark inactive".
-        // Looking at schema: existing schema logic doesn't have 'active' flag on route.
-        // Check schema lines 16-22 in Merchant.ts: No active flag.
-        // Schema update might be needed or we just assume delete is the only way for now if strict on schema.
-        // Wait, Task Requirement 1 says "Status (Active / Disabled)".
-        // BUT Requirement 5 says "Existing merchant schema already contains...".
-        // I will assume I CANNOT modify the schema structure too heavily if not requested, but I can add fields if Mongoose allows loose schema or if I update the interface.
-        // Actually, let's double check the schema file content provided earlier.
-        // File content lines 64-70: `routes: [{ ... }]` strict schema.
-        // If I need to add 'active' status, I should probably add it to the schema.
-        // Requirement 5 says "Do NOT change merchant identification logic", "Do NOT touch payment flow".
-        // It doesn't explicitly forbid adding fields to route config.
-        // I will add 'active' boolean to the route in schema first, or just manage it? 
-        // Re-reading: "3. Edit & Disable... Disable should NOT delete".
-        // So I MUST add a status field to the route schema. I'll do that in a separate tool call to be safe, but for now let's implement the logic assuming I'll fix the schema.
-
-        // Actually, let's implement the properties update.
-        // I will assume checking for `active` property.
-        if (req.body.active !== undefined) {
-            (route as any).active = req.body.active;
-        }
+        if (active !== undefined) (route as any).active = active;
+        if (status !== undefined) (route as any).active = (status === 'active'); // Backwards compact
 
         await merchant.save();
         res.json(merchant.api.routes);
@@ -225,7 +265,8 @@ router.put("/:merchantId/routes/:routeId", async (req: Request, res: Response): 
 });
 
 // DELETE /api/merchants/:merchantId/routes/:routeId
-router.delete("/:merchantId/routes/:routeId", async (req: Request, res: Response): Promise<any> => {
+// 🔒 Secured by Wallet Signature
+router.delete("/:merchantId/routes/:routeId", verifyWalletSignature, async (req: Request, res: Response): Promise<any> => {
     try {
         const { merchantId, routeId } = req.params;
 
