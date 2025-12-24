@@ -6,10 +6,10 @@ app.use(express.json());
 
 // 1️⃣ Apply payment middleware
 app.use(paymentMiddleware({
-  merchantId: "b9805b9e-fa6c-4640-8470-f5b230dee6d4",
+  merchantId: "ec85b480-0874-4c67-9b21-596d593394b0",
   gatewayUrl: "https://cronos-x-402-production.up.railway.app",
   facilitatorUrl: "https://cronos-x-402-production.up.railway.app",
-  network: "cronos-testnet"
+  network: "cronos-testnet",
 }));
 
 // 2️⃣ DEFINE THE ROUTE (Matching your registered /posts)

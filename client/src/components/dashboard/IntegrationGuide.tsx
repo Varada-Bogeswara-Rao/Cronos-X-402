@@ -59,6 +59,41 @@ export default function IntegrationGuide({ merchantId }: { merchantId: string })
                 </div>
             </div>
 
+            {/* 3. Middleware Configuration */}
+            <div className="mb-10 relative z-10">
+                <h3 className="text-sm font-medium text-gray-400 mb-4 uppercase tracking-wider">Server Configuration</h3>
+                <div className="bg-black/40 rounded-xl border border-white/10 overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5">
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <span className="text-blue-400">TypeScript</span>
+                        </div>
+                        <button
+                            onClick={() => navigator.clipboard.writeText(`app.use(
+  paymentMiddleware({
+    merchantId: "${merchantId}",
+    gatewayUrl: "https://cronos-x-402-production.up.railway.app",
+    facilitatorUrl: "https://cronos-x-402-production.up.railway.app",
+    network: "cronos-testnet",
+  })
+);`)}
+                            className="text-gray-400 hover:text-white transition-colors"
+                        >
+                            <Copy size={14} />
+                        </button>
+                    </div>
+                    <div className="p-4 font-mono text-sm text-gray-300 overflow-x-auto whitespace-pre">
+                        {`app.use(
+  paymentMiddleware({
+    merchantId: "${merchantId}",
+    gatewayUrl: "https://cronos-x-402-production.up.railway.app",
+    facilitatorUrl: "https://cronos-x-402-production.up.railway.app",
+    network: "cronos-testnet",
+  })
+);`}
+                    </div>
+                </div>
+            </div>
+
             {/* 3. Test Your API Panel */}
             <div className="relative z-10">
                 <h3 className="text-sm font-medium text-gray-400 mb-4 uppercase tracking-wider">Test Your Integration</h3>

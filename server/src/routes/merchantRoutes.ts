@@ -194,7 +194,7 @@ router.get("/:merchantId/routes", async (req: Request, res: Response): Promise<a
 });
 
 // POST /api/merchants/:merchantId/routes
-// 🔒 Secured by Wallet Signature
+//  Secured by Wallet Signature
 router.post("/:merchantId/routes", verifyWalletSignature, async (req: Request, res: Response): Promise<any> => {
     try {
         const { merchantId } = req.params;

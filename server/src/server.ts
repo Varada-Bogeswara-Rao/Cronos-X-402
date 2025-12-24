@@ -9,7 +9,7 @@ import connectDB from './db';
 import merchantRoutes from './routes/merchantRoutes';
 import priceCheck from './routes/priceCheck';
 import verifyPayment from './facilitator/verifyPayment';
-import gatewayRouter from "./routes/gateway";
+import sandboxRouter from "./routes/sandbox";
 
 dotenv.config();
 
@@ -52,7 +52,7 @@ app.use('/api/transactions', transactionsRouter);
 app.use('/api/merchants', merchantRoutes);
 app.use('/api/price-check', priceCheck);
 app.use('/api/facilitator', verifyPayment);
-app.use('/api', gatewayRouter); // Catch-all for proxying
+app.use('/api/sandbox', sandboxRouter); // [SECURE] Sandbox Namespace
 
 app.get('/', (req: Request, res: Response) => {
   res.json({ status: 'online', service: 'Cronos Merchant Gateway' });
