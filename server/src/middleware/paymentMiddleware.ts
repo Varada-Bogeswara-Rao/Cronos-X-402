@@ -147,7 +147,8 @@ export function paymentMiddleware(config: PaymentMiddlewareConfig) {
             console.error("[PAYMENT_MIDDLEWARE_CRASH]", error.response?.data || error.message);
             return res.status(500).json({
                 error: "PAYMENT_GATEWAY_ERROR",
-                message: "An internal error occurred during payment processing."
+                message: error.message,
+                details: error.response?.data
             });
         }
     };

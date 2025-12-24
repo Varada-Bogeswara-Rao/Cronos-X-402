@@ -54,6 +54,12 @@ router.all("/:merchantId/*", async (req: Request, res: Response) => {
 
         // 3. [SECURITY] Apply Payment Middleware
         // We wrap the middleware in a promise to await it inline
+
+        // [FIX] Middleware relies on req.path. We must rewrite req.url to match the registered route path.
+        // Save original URL to restore if needed (though we proxy upstreamUrl anyway)
+        const originalUrl = req.url;
+        req.url = actualPath + (req.url.includes('?') ? '?' + req.url.split('?')[1] : '');
+
         const middleware = paymentMiddleware({
             merchantId,
             gatewayUrl: `${req.protocol}://${req.get('host')}`, // Self-referential for sandbox
