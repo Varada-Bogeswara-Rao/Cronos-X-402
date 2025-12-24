@@ -152,16 +152,21 @@ export function paymentMiddleware(config: PaymentMiddlewareConfig) {
             return next();
 
         } catch (error: any) {
-            console.error("[PAYMENT_MIDDLEWARE_CRASH]", error.response?.data || error.message);
+            console.error("[PAYMENT_MIDDLEWARE_CRASH] Full Error:", {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
 
             // ✅ Forward explicit backend errors ("ROUTE_DISABLED", etc.)
             if (error.response?.data?.error) {
+                console.log("[PAYMENT_MIDDLEWARE] Forwarding backend error:", error.response.data);
                 return res.status(error.response.status).json(error.response.data);
             }
 
             return res.status(500).json({
                 error: "PAYMENT_GATEWAY_ERROR",
-                message: "An internal error occurred during payment processing."
+                message: "An internal error occurred during payment processing. (v2)"
             });
         }
     };
