@@ -253,6 +253,21 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button
+                                                    onClick={() => {
+                                                        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+                                                        // Ensure clean path concatenation
+                                                        const cleanPath = route.path.startsWith('/') ? route.path : `/${route.path}`;
+                                                        const sandboxUrl = `${baseUrl}/api/sandbox/${merchantId}${cleanPath}`;
+                                                        window.open(sandboxUrl, '_blank');
+                                                    }}
+                                                    className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                                                    title="Test in Sandbox"
+                                                >
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-xs font-bold">TEST</span>
+                                                    </div>
+                                                </button>
+                                                <button
                                                     onClick={() => handleDisable(route)}
                                                     className={`p-1.5 rounded-md transition-colors ${route.active ? 'text-gray-400 hover:text-orange-500 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50'}`}
                                                     title={route.active ? "Disable" : "Enable"}
@@ -280,105 +295,108 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
                             </tbody>
                         </table>
                     </div>
-                </div>
-            )}
+                </div >
+            )
+            }
 
             {/* Config Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl scale-100 transition-all">
-                        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                            <h3 className="text-lg font-bold text-gray-900">
-                                {editingRoute ? "Edit API Route" : "Add New API"}
-                            </h3>
-                            <button
-                                onClick={closeModal}
-                                className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
-
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="col-span-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Method</label>
-                                    <select
-                                        {...register("method")}
-                                        disabled={!!editingRoute}
-                                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
-                                    >
-                                        <option value="GET">GET</option>
-                                        <option value="POST">POST</option>
-                                        <option value="PUT">PUT</option>
-                                        <option value="DELETE">DELETE</option>
-                                    </select>
-                                </div>
-                                <div className="col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Path</label>
-                                    <input
-                                        {...register("path")}
-                                        disabled={!!editingRoute}
-                                        placeholder="/api/v1/resource"
-                                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500 font-mono"
-                                    />
-                                    {errors.path && <p className="text-red-500 text-xs mt-1">{errors.path.message}</p>}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-                                    <div className="relative">
-                                        <input
-                                            {...register("price")}
-                                            placeholder="0.05"
-                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                        />
-                                    </div>
-                                    {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                                    <select
-                                        {...register("currency")}
-                                        disabled
-                                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-gray-50 text-gray-500"
-                                    >
-                                        <option value="USDC">USDC (Polygon/Cronos)</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            {editingRoute && (
-                                <div className="p-3 bg-blue-50 text-blue-700 text-xs rounded-lg">
-                                    Editing path or method is disabled to prevent breaking existing integrations. Delete and recreate if needed.
-                                </div>
-                            )}
-
-                            <div className="pt-4 flex gap-3">
+            {
+                isModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                        <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl scale-100 transition-all">
+                            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                                <h3 className="text-lg font-bold text-gray-900">
+                                    {editingRoute ? "Edit API Route" : "Add New API"}
+                                </h3>
                                 <button
-                                    type="button"
                                     onClick={closeModal}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                                    className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
                                 >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={submitting}
-                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                >
-                                    {submitting && <Loader2 size={16} className="animate-spin" />}
-                                    {editingRoute ? "Save Changes" : "Create Route"}
+                                    <X size={20} />
                                 </button>
                             </div>
 
-                        </form>
+                            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="col-span-1">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Method</label>
+                                        <select
+                                            {...register("method")}
+                                            disabled={!!editingRoute}
+                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+                                        >
+                                            <option value="GET">GET</option>
+                                            <option value="POST">POST</option>
+                                            <option value="PUT">PUT</option>
+                                            <option value="DELETE">DELETE</option>
+                                        </select>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Path</label>
+                                        <input
+                                            {...register("path")}
+                                            disabled={!!editingRoute}
+                                            placeholder="/api/v1/resource"
+                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500 font-mono"
+                                        />
+                                        {errors.path && <p className="text-red-500 text-xs mt-1">{errors.path.message}</p>}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                                        <div className="relative">
+                                            <input
+                                                {...register("price")}
+                                                placeholder="0.05"
+                                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                                        <select
+                                            {...register("currency")}
+                                            disabled
+                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-gray-50 text-gray-500"
+                                        >
+                                            <option value="USDC">USDC (Polygon/Cronos)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {editingRoute && (
+                                    <div className="p-3 bg-blue-50 text-blue-700 text-xs rounded-lg">
+                                        Editing path or method is disabled to prevent breaking existing integrations. Delete and recreate if needed.
+                                    </div>
+                                )}
+
+                                <div className="pt-4 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={closeModal}
+                                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={submitting}
+                                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {submitting && <Loader2 size={16} className="animate-spin" />}
+                                        {editingRoute ? "Save Changes" : "Create Route"}
+                                    </button>
+                                </div>
+
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }

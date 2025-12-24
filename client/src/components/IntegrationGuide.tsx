@@ -15,8 +15,8 @@ export default function IntegrationGuide({ merchantId }: IntegrationGuideProps) 
 
 app.use(paymentMiddleware({
   merchantId: "${merchantId}",
-  gatewayUrl: "${gatewayUrl}",
-  facilitatorUrl: "${gatewayUrl}/api/facilitator",
+  gatewayUrl: "${gatewayUrl}", // Base URL for Price Checks
+  facilitatorUrl: "${gatewayUrl}", // Base URL for Verification
   network: "cronos-testnet"
 }));`;
 
