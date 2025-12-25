@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2, Edit2, CheckCircle2, XCircle, Loader2, MoreVertical, X } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { api } from "@/lib/api";
 import { useSignMessage } from 'wagmi';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // --- Types ---
 
@@ -49,6 +50,7 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
     // Form Setup
     const {
         register,
+        control,
         handleSubmit,
         reset,
         setValue,
@@ -314,16 +316,27 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="col-span-1">
                                     <label className="block text-sm font-medium text-gray-400 mb-1">Method</label>
-                                    <select
-                                        {...register("method")}
-                                        disabled={!!editingRoute}
-                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
-                                    >
-                                        <option value="GET">GET</option>
-                                        <option value="POST">POST</option>
-                                        <option value="PUT">PUT</option>
-                                        <option value="DELETE">DELETE</option>
-                                    </select>
+                                    <Controller
+                                        name="method"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Select
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                disabled={!!editingRoute}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select Method" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="GET">GET</SelectItem>
+                                                    <SelectItem value="POST">POST</SelectItem>
+                                                    <SelectItem value="PUT">PUT</SelectItem>
+                                                    <SelectItem value="DELETE">DELETE</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    />
                                 </div>
                                 <div className="col-span-2">
                                     <label className="block text-sm font-medium text-gray-400 mb-1">Path</label>
@@ -351,13 +364,26 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-400 mb-1">Currency</label>
-                                    <select
-                                        {...register("currency")}
-                                        disabled
-                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-400 disabled:opacity-50"
-                                    >
-                                        <option value="USDC">USDC (Polygon/Cronos)</option>
-                                    </select>
+                                    <Controller
+                                        name="currency"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Select
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                disabled
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue>
+                                                        {field.value === "USDC" ? "USDC (Polygon/Cronos)" : field.value}
+                                                    </SelectValue>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="USDC">USDC (Polygon/Cronos)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    />
                                 </div>
                             </div>
 
