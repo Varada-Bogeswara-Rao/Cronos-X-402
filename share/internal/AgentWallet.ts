@@ -12,6 +12,7 @@ interface WalletState {
     paidRequests: [string, number][]; // Serialize Map as entries
 }
 
+
 /**
  * AgentWallet
  * ------------

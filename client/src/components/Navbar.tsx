@@ -8,6 +8,9 @@ export function Navbar() {
                 Cronos Gateway
             </Link>
             <div className="flex items-center gap-4">
+                <Link href="/docs" className="px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors border border-white/10 rounded-lg hover:bg-white/5">
+                    Documentation
+                </Link>
                 <Link href="/dashboard" className="px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors border border-white/10 rounded-lg hover:bg-white/5">
                     Dashboard
                 </Link>

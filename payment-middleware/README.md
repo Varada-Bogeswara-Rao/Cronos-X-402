@@ -4,13 +4,13 @@ Express middleware to enforce x402 payment-based access control.
 
 ## Install
 ```bash
-npm install @cronos-merchant/payment-middleware
+npm install cronos-merchant-payment-middleware
 ```
 
 ## Usage
 ```ts
 import express from 'express';
-import { paymentMiddleware } from '@cronos-merchant/payment-middleware';
+import { paymentMiddleware } from 'cronos-merchant-payment-middleware';
 
 const app = express();
 
@@ -26,12 +26,4 @@ Returns `402 Payment Required` for unpaid requests.
 
 ---
 
-## 🚀 Publish to npm
 
-```bash
-npm login
-npm run build
-npm publish --access public
-```
-
-Done.
