@@ -3,26 +3,24 @@ import "dotenv/config";
 import { AgentWallet } from "./internal/AgentWallet";
 import { CronosUsdcExecutor } from "./internal/CronosUsdcExecutor";
 import { x402Request } from "./internal/x402ToolClient";
+import { ethers } from "ethers";
+import { VvsYieldExecutor } from "./internal/VvsYieldExecutor";
 
 async function run() {
   // --------------------------------------------------
-  // 1. TARGET = MERCHANT API (NOT gateway, NOT coingecko)
+  // 1. Merchant API
   // --------------------------------------------------
 
-  // If merchant is running locally
   const MERCHANT_API_URL = "http://localhost:3001";
-
-  // If merchant is deployed, use that instead:
-  // const MERCHANT_API_URL = "https://<merchant-backend>.up.railway.app";
-
   const TARGET_PATH = "/photos";
   const FULL_URL = `${MERCHANT_API_URL}${TARGET_PATH}`;
 
   // --------------------------------------------------
-  // 2. Agent / Chain Configuration
+  // 2. RPCs
   // --------------------------------------------------
 
-  const RPC_URL =
+  const MAINNET_RPC = "https://evm.cronos.org";
+  const TESTNET_RPC =
     process.env.CRONOS_RPC_URL || "https://evm-t3.cronos.org";
 
   const USDC_ADDR =
@@ -30,57 +28,60 @@ async function run() {
     "0xc01efAaF7C5C61bEbFAeb358E1161b537b8bC0e0";
 
   const PRIVATE_KEY = process.env.AGENT_WALLET_PRIVATE_KEY;
+  if (!PRIVATE_KEY) throw new Error("Missing AGENT_WALLET_PRIVATE_KEY");
 
-  if (!PRIVATE_KEY) {
-    throw new Error("Missing AGENT_WALLET_PRIVATE_KEY in .env");
+  // --------------------------------------------------
+  // 3. Agent (payments)
+  // --------------------------------------------------
+
+  const paymentExecutor = new CronosUsdcExecutor(
+    TESTNET_RPC,
+    PRIVATE_KEY,
+    USDC_ADDR,
+    338
+  );
+
+  const wallet = new AgentWallet(
+    new ethers.Wallet(PRIVATE_KEY).address,
+    paymentExecutor
+  );
+
+  // --------------------------------------------------
+  // 4. AutoVVS Yield Sensor (Mainnet)
+  // --------------------------------------------------
+
+  const provider = new ethers.JsonRpcProvider(MAINNET_RPC);
+  const ethersWallet = new ethers.Wallet(PRIVATE_KEY, provider);
+
+  const yieldExec = new VvsYieldExecutor(provider, ethersWallet);
+
+  console.log("--------------------------------------------------");
+  console.log(`🤖 AGENT: ${ethersWallet.address}`);
+  console.log("🌱 AutoVVS Vault: read-only position");
+  console.log("--------------------------------------------------");
+
+  try {
+    const pos = await yieldExec.getVaultPosition();
+
+    console.log("📊 Vault Position (RAW):", {
+      shares: pos.shares.toString(),
+      pricePerShare: pos.pricePerShare.toString(),
+      underlyingValue: pos.underlyingValue.toString()
+    });
+
+    console.log(
+      "📊 Underlying (formatted, 18d):",
+      ethers.formatUnits(pos.underlyingValue, 18)
+    );
+  } catch (err: any) {
+    console.error("❌ AutoVVS sensor error:", err.message);
   }
 
   // --------------------------------------------------
-  // 3. Initialize Autonomous Agent
+  // 5. x402 flow (unchanged)
   // --------------------------------------------------
-
-  const executor = new CronosUsdcExecutor(
-    RPC_URL,
-    PRIVATE_KEY,
-    USDC_ADDR,
-    338 // Expected Chain ID (Cronos Testnet)
-  );
-
-  // Derive address from private key for the wallet config
-  // (In a real scenario, the executor might expose this, but we'll re-derive here for simplicity)
-  // or add a getter to executor.
-  // Actually, CronosUsdcExecutor has a wallet but it's private.
-  // Let's just create a quick separate wallet instance to get the address, 
-  // OR since we are inside demo.ts, we can just use ethers directly if we import it, 
-  // OR we can assume we know it.
-
-  // Cleanest way without importing ethers in demo.ts if not needed:
-  // Add `getWalletAddress()` to CronosUsdcExecutor.
-  // BUT I don't want to edit Executor again if I can avoid it.
-
-  // Wait, I can just use a helper or trust the user knows it? No.
-  // Let's import ethers here properly.
-
-  const { ethers } = require("ethers");
-  const tempWallet = new ethers.Wallet(PRIVATE_KEY);
-  const agentAddress = tempWallet.address;
-
-  const wallet = new AgentWallet(agentAddress, executor);
-
-  console.log("--------------------------------------------------");
-  console.log(`🤖 AGENT ONLINE: ${agentAddress}`);
-  console.log(`🎯 TARGET API: ${FULL_URL}`);
-  console.log("--------------------------------------------------");
 
   console.log(`[x402] Negotiating access for: ${TARGET_PATH}...`);
-
-  // --------------------------------------------------
-  // 4. x402 Autonomous Handshake
-  // --------------------------------------------------
-
-  // --------------------------------------------------
-  // 4. x402 Autonomous Handshake
-  // --------------------------------------------------
 
   try {
     const result = await x402Request(
@@ -90,9 +91,10 @@ async function run() {
         chainId: 338,
         merchantId: "b9805b9e-fa6c-4640-8470-f5b230dee6d4"
       },
-      {} // Empty options/headers
+      {}
     );
-    console.log(`✅ Success! Data Received:`);
+
+    console.log("✅ Success! Data Received:");
     console.dir(result, { depth: null });
   } catch (error: any) {
     console.error(`❌ Failed: ${error.message}`);

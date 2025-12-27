@@ -1,4 +1,4 @@
 export interface YieldExecutor {
-  getPendingYield(): Promise<number>;
+  getVaultPosition(): Promise<any>; // Returns protocol-specific position data
   harvest(): Promise<number>; // returns harvested USDC
 }
