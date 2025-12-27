@@ -5,7 +5,8 @@ import { YieldExecutor } from "./YieldExecutor";
 // Minimal AutoVVS vault ABI (verified)
 const AUTO_VVS_VAULT_ABI = [
   "function userInfo(address) view returns (uint256 shares, uint256 lastDepositedTime, uint256 cakeAtLastUserAction, uint256 lastUserActionTime)",
-  "function getPricePerFullShare() view returns (uint256)"
+  "function getPricePerFullShare() view returns (uint256)",
+  "function withdraw(uint256 shares)"
 ];
 
 // Cronos Mainnet AutoVVS Vault
@@ -56,8 +57,25 @@ export class VvsYieldExecutor implements YieldExecutor {
     };
   }
 
-  // 🚫 Phase 5A boundary
   async harvest(): Promise<number> {
-    throw new Error("harvest() not implemented (AutoVVS Phase 5A)");
+    // Not implemented in Phase 5/6
+    return 0;
+  }
+
+  // ⚡ Phase 6: Authorized Execution
+  // CRITICAL: amount is SHARES, not underlying
+  async withdraw(amount: bigint): Promise<string> {
+    console.log(`[VvsYieldExecutor] Executing withdraw for ${amount} SHARES...`);
+
+    // 1. Send Transaction
+    const tx = await this.vault.withdraw(amount);
+    console.log(`[VvsYieldExecutor] Tx Sent: ${tx.hash}`);
+
+    // 2. Wait for 1 Confirmation (Receipt)
+    console.log("[VvsYieldExecutor] Waiting for 1 confirmation...");
+    await tx.wait(1);
+    console.log("[VvsYieldExecutor] Confirmed!");
+
+    return tx.hash;
   }
 }
