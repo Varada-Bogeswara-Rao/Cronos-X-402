@@ -49,6 +49,9 @@ import transactionsRouter from './routes/transactions';
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/transactions', transactionsRouter);
 
+import yieldSourcesRouter from './routes/yieldSources';
+app.use('/api/yield-sources', yieldSourcesRouter);
+
 app.use('/api/merchants', merchantRoutes);
 app.use('/api/price-check', priceCheck);
 app.use('/api/facilitator', verifyPayment);
@@ -57,6 +60,12 @@ app.use('/api/sandbox', sandboxRouter); // [SECURE] Sandbox Namespace
 app.get('/', (req: Request, res: Response) => {
   res.json({ status: 'online', service: 'Cronos Merchant Gateway' });
 });
+
+// [NEW] Background Schedulers
+import { YieldScheduler } from './services/YieldScheduler';
+const yieldScheduler = new YieldScheduler();
+yieldScheduler.start();
+
 
 // 5. Global Error Handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

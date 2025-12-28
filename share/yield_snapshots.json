@@ -68,5 +68,12 @@
     "shares": "184530896717877355555716",
     "underlyingValue": "20729341893484809613196453",
     "timestamp": 1766865710
+  },
+  {
+    "agentAddress": "0xb0F8b79a06662D6c165Bf67B4A7DE963aaf9ec50",
+    "vaultAddress": "0xA6fF77fC8E839679D4F7408E8988B564dE1A2dcD",
+    "shares": "184530896717877355555716",
+    "underlyingValue": "20729341893484809613196453",
+    "timestamp": 1766901711
   }
 ]
