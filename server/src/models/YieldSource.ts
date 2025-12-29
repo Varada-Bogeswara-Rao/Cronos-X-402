@@ -11,6 +11,7 @@ export interface IYieldSource extends Document {
     pricePerShare: string; // RAW BigInt string
     realizedGrowth24h: string; // RAW BigInt string (from actual PPS growth)
     pendingRewards: string; // RAW BigInt string (unrealized)
+    stakedAmount: string; // RAW BigInt string
     updatedAt: number;
 }
 
@@ -25,6 +26,7 @@ const YieldSourceSchema: Schema = new Schema({
     pricePerShare: { type: String, required: true },
     realizedGrowth24h: { type: String, required: true, default: "0" },
     pendingRewards: { type: String, required: true, default: "0" },
+    stakedAmount: { type: String, required: true, default: "0" },
     updatedAt: { type: Number, required: true }
 });
 

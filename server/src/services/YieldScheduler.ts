@@ -1,13 +1,18 @@
-
 import { AutoVvsAdapter } from "./yieldSources/AutoVvsAdapter";
+import { ManualVvsAdapter } from "./yieldSources/ManualVvsAdapter";
+import { TectonicAdapter } from "./yieldSources/TectonicAdapter";
 
 export class YieldScheduler {
-    private adapter: AutoVvsAdapter;
+    private autoAdapter: AutoVvsAdapter;
+    private manualAdapter: ManualVvsAdapter;
+    private tectonicAdapter: TectonicAdapter;
     private intervalId: NodeJS.Timeout | null = null;
     private intervalMs: number = 5 * 60 * 1000; // 5 minutes
 
     constructor() {
-        this.adapter = new AutoVvsAdapter();
+        this.autoAdapter = new AutoVvsAdapter();
+        this.manualAdapter = new ManualVvsAdapter();
+        this.tectonicAdapter = new TectonicAdapter();
     }
 
     start() {
@@ -32,7 +37,11 @@ export class YieldScheduler {
 
     private async runSync() {
         try {
-            await this.adapter.fetchAndSync();
+            await Promise.all([
+                this.autoAdapter.fetchAndSync(),
+                this.manualAdapter.fetchAndSync(),
+                this.tectonicAdapter.fetchAndSync()
+            ]);
         } catch (error) {
             console.error("❌ [YieldScheduler] Sync Error:", error);
         }
