@@ -13,6 +13,8 @@ export interface IYieldSource extends Document {
     pendingRewards: string; // RAW BigInt string (unrealized)
     stakedAmount: string; // RAW BigInt string
     updatedAt: number;
+    estimatedAPY?: string; // e.g. "X.XX%"
+    supplyRatePerBlock?: string; // Raw BigInt
 }
 
 const YieldSourceSchema: Schema = new Schema({
