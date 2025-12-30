@@ -27,7 +27,11 @@ const YieldSourceSchema: Schema = new Schema({
     realizedGrowth24h: { type: String, required: true, default: "0" },
     pendingRewards: { type: String, required: true, default: "0" },
     stakedAmount: { type: String, required: true, default: "0" },
-    updatedAt: { type: Number, required: true }
+    updatedAt: { type: Number, required: true },
+
+    // Hardening: Explicit separation of protocol metrics vs UI estimates
+    estimatedAPY: { type: String, required: false }, // "2.5%" (UI only)
+    supplyRatePerBlock: { type: String, required: false } // Raw protocol data
 });
 
 export const YieldSource = mongoose.model<IYieldSource>("YieldSource", YieldSourceSchema);
