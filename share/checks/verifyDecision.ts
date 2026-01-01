@@ -16,8 +16,10 @@ export function verifyDecision(
     myAddress: string
 ): boolean {
     // 1. Check Expiration first (Cheap)
-    if (Date.now() > decision.expiresAt) {
-        throw new Error(`❌ Decision Expired! (Expired at ${new Date(decision.expiresAt).toISOString()})`);
+    // Note: expiresAt is in SECONDS (EIP-712 standard matches block.timestamp)
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (nowSeconds > decision.expiresAt) {
+        throw new Error(`❌ Decision Expired! (Expired at ${new Date(decision.expiresAt * 1000).toISOString()})`);
     }
 
     // 2. Check Agent Match (Prevent replay)
