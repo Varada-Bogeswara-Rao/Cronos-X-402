@@ -2,6 +2,7 @@
 import { ethers } from "hardhat";
 import { YieldAgent } from "../internal/yield/YieldAgent";
 import { RiskConfig } from "../internal/yield/RiskManager";
+import { MockERC20, MockVault } from "../typechain-types";
 
 // --- CONFIG ---
 const MOCK_CHAIN_ID = 25; // Must match Production for VerifyDecision check
@@ -17,12 +18,12 @@ async function main() {
     // 2. Deploy Infrastructure
     console.log(`\n🏗️  Deploying Mock Contracts...`);
     const MockERC20 = await ethers.getContractFactory("MockERC20");
-    const usdc = await MockERC20.deploy("Mock USDC", "USDC");
+    const usdc = (await MockERC20.deploy("Mock USDC", "USDC")) as unknown as MockERC20;
     await usdc.waitForDeployment();
     console.log(`   [USDC] Deployed at: ${await usdc.getAddress()}`);
 
     const MockVault = await ethers.getContractFactory("MockVault");
-    const vault = await MockVault.deploy(await usdc.getAddress());
+    const vault = (await MockVault.deploy(await usdc.getAddress())) as unknown as MockVault;
     await vault.waitForDeployment();
     const vaultAddress = await vault.getAddress();
     console.log(`   [Vault] Deployed at: ${vaultAddress}`);

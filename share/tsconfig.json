@@ -15,6 +15,7 @@
         "internal/AgentWallet.ts",
         "internal/executors.ts",
         "internal/types.ts",
-        "internal/x402ToolClient.ts"
+        "internal/x402ToolClient.ts",
+        "scripts/**/*.ts"
     ]
 }

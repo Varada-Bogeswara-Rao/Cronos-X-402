@@ -2,13 +2,15 @@
 import { ethers, network } from "hardhat";
 import { YieldAgent } from "../internal/yield/YieldAgent";
 import { RiskConfig } from "../internal/yield/RiskManager";
+import { IERC20 } from "../typechain-types";
 
 // --- CONFIG ---
 const T_USDC_ADDRESS = "0xB3bbf1bE947b245Aef26e3B6a9D777d7703F4c8e";
-const CRONOS_CHAIN_ID = 25;
-
 async function main() {
-    console.log(`\n🌌 Entering the Matrix (Cronos Mainnet Fork)`);
+    const net = await ethers.provider.getNetwork();
+    const CRONOS_CHAIN_ID = Number(net.chainId); // Auto-detect (31337 or 25)
+    console.log(`\n🌌 Entering the Matrix (Cronos Mainnet Fork) - Chain ID: ${CRONOS_CHAIN_ID}`);
+
     console.log("==================================================");
 
     // 1. Setup Identities
@@ -16,7 +18,7 @@ async function main() {
     console.log(`🤖 Agent Address: ${agentWallet.address}`);
 
     // 2. Locate Contracts & Whale
-    const tToken = await ethers.getContractAt("mTectonicVault", T_USDC_ADDRESS);
+
 
     // Dynamic USDC Address lookup!
     // We need an ABI that includes underlying()
@@ -27,11 +29,11 @@ async function main() {
         "function approve(address spender, uint amount) returns (bool)"
     ];
     // Cast to any to avoid strict typing issues with ethers v6/hardhat mismatch
-    const tTokenRef = new ethers.Contract(T_USDC_ADDRESS, tTokenAbi, ethers.provider);
+    const tTokenRef = new ethers.Contract(T_USDC_ADDRESS, tTokenAbi, ethers.provider) as any;
     const USDC_ADDRESS = await tTokenRef.underlying();
     console.log(`🔍 Found USDC Contract: ${USDC_ADDRESS}`);
 
-    const usdc = await ethers.getContractAt("IERC20", USDC_ADDRESS);
+    const usdc = (await ethers.getContractAt("IERC20", USDC_ADDRESS)) as unknown as IERC20;
 
     // 3. The Heist (Whale Impersonation)
     // We impersonate the Tectonic Vault itself because we KNOW it has USDC.
