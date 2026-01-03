@@ -51,6 +51,8 @@ export function verifyDecision(
         vaultAddress: decision.vaultAddress,
         chainId: decision.chainId,
         decision: decision.decision,
+        amount: decision.amount || "0",
+        minAmountOut: decision.minAmountOut || "0",
         scope: decision.scope,
         // reason excluded
         nonce: decision.nonce,
@@ -64,6 +66,8 @@ export function verifyDecision(
             { name: "vaultAddress", type: "address" },
             { name: "chainId", type: "uint256" },
             { name: "decision", type: "string" },
+            { name: "amount", type: "string" }, // Critical: Protect Amount
+            { name: "minAmountOut", type: "string" }, // Critical: Protect Slippage
             { name: "scope", type: "string" },
             // reason excluded
             { name: "nonce", type: "string" },

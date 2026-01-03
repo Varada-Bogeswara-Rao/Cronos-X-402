@@ -3,9 +3,9 @@ export type YieldDecision = {
     vaultAddress: string;
     chainId: number;
 
-    decision: "APPROVE" | "DENY" | "HOLD";
-    action?: "WITHDRAW"; // future-proof
+    decision: "APPROVE" | "DENY" | "HOLD" | "PARTIAL_WITHDRAW" | "EMERGENCY_EXIT" | "FORCE_GAS_REFILL";
     amount?: string;     // bigint as string
+    minAmountOut?: string; // bigint as string (Slippage protection)
 
     scope: "YIELD_ONLY"; // Domain separation
 

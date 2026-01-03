@@ -68,13 +68,12 @@ async function main() {
     const facilitator = ethers.Wallet.createRandom(); // Local random is fine for simulation
 
     // Configure Agent
-    const riskConfig: RiskConfig = {
-        maxYieldAllocationPercent: 0.5, // 50%
-        minIdleBalance: ethers.parseUnits("10", 6), // Keep $10
-        maxDailyYieldMoves: 5
-    };
-
-    const yieldAgent = new YieldAgent(facilitator.address, riskConfig);
+    const yieldAgent = new YieldAgent(facilitator.address, {
+        maxYieldAllocationPercent: 0.5,
+        minIdleBalance: 10_000_000n,
+        maxDailyYieldMoves: 10,
+        gasBufferCro: 5_000_000_000_000_000_000n
+    });
 
     // 6. Generate Decision (Brain)
     // We simulate the brain seeing the yield and signing.
@@ -124,14 +123,16 @@ async function main() {
             await tx.wait();
             return tx.hash;
         },
-        withdrawYield: async () => { return "0x" }
+        withdrawYield: async () => { console.log("Withdraw stub called"); return "0x000"; },
+        withdraw: async (amt: bigint) => { console.log("WithdrawPartial stub called", amt); return "0x000"; }
     };
 
     const result = await yieldAgent.executeDecision(
         signedDecision as any,
         agentWallet.address,
-        balance,
-        0,
+        100_000_000n, // 100 USDC Balance
+        100_000_000_000_000_000_000n, // 100 CRO Gas Balance (Plenty)
+        0, // Moves today
         executor
     );
 

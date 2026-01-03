@@ -20,12 +20,36 @@ export interface RiskConfig {
      * Prevents runaway loops.
      */
     maxDailyYieldMoves: number;
+
+    /**
+     * Minimum CRO balance to maintain.
+     * If current balance < this, Refill is allowed.
+     */
+    gasBufferCro: bigint;
+}
+
+export interface BufferConfig {
+    /** Minimum USDC to keep for API calls/Ops (e.g. 5 USDC) */
+    apiBufferUsdc: bigint;
+    /** Minimum CRO to keep for Gas (e.g. 5 CRO) */
+    gasBufferCro: bigint;
+    /** Absolute floor for USDC. If below this, trigger Emergency Withdraw. */
+    emergencyBufferUsdc: bigint;
+}
+
+export interface WalletSnapshot {
+    usdcBalance: string; // serialized bigint
+    croBalance: string;  // serialized bigint
+    tUsdcBalance: string; // serialized bigint
+    exchangeRate: string; // serialized bigint (mantissa)
+    timestamp: number;
 }
 
 export const DEFAULT_RISK_CONFIG: RiskConfig = {
-    maxYieldAllocationPercent: 0.5, // Conservative 50%
-    minIdleBalance: 100n * (10n ** 6n), // 100 USDC (assuming 6 decimals)
-    maxDailyYieldMoves: 10
+    maxYieldAllocationPercent: 0.5, // 50%
+    minIdleBalance: 10_000_000n,    // 10 USDC
+    maxDailyYieldMoves: 10,
+    gasBufferCro: 5_000_000_000_000_000_000n // 5 CRO
 };
 
 export class RiskManager {
