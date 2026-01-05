@@ -1,0 +1,8 @@
+--- DIAGNOSTIC REPORT ---
+Merchant: merchant_1767603000251
+   tUSDC Balance: 9336742823687
+   Exchange Rate: 1068921398628311
+   Position Data:
+      Principal: 9980244156 (Type: string)
+      Status: ACTIVE
+--------------------------

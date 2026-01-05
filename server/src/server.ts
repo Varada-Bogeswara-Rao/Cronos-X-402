@@ -33,7 +33,7 @@ app.use(express.json({ limit: '10kb' }));
 app.set("trust proxy", 1);
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100
+  max: 5000 // Relaxed for local dev/polling
 });
 app.use('/api/', limiter);
 
@@ -46,8 +46,13 @@ import transactionsRouter from './routes/transactions';
 // ...
 
 // [NEW] Dashboard Analytics & Data - MUST BE BEFORE GATEWAY CATCH-ALL
+// [NEW] Dashboard Analytics & Data - MUST BE BEFORE GATEWAY CATCH-ALL
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/transactions', transactionsRouter);
+
+// [NEW] Yield Intelligence Ops (Phase F - Read Only)
+import yieldOpsRouter from './routes/yieldOps';
+app.use('/api/yield', yieldOpsRouter);
 
 import yieldSourcesRouter from './routes/yieldSources';
 app.use('/api/yield-sources', yieldSourcesRouter);
@@ -78,4 +83,11 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-});
+});// Forced Restart
+// Restart 2
+// Restart 3
+// Restart 4
+// Restart 5
+// Restart 6
+// Restart 7
+// Restart Clean

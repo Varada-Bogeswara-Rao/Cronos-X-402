@@ -5,6 +5,7 @@ import { TectonicCroAdapter } from "./yieldSources/TectonicCroAdapter";
 import { WalletWatcher } from "./WalletWatcher";
 import { FacilitatorLoop } from "./FacilitatorLoop";
 import WalletSnapshot from "../models/WalletSnapshot";
+import Merchant from "../models/Merchant";
 
 export class YieldScheduler {
     private autoAdapter: AutoVvsAdapter;
@@ -14,7 +15,7 @@ export class YieldScheduler {
     private walletWatcher: WalletWatcher;
     private facilitatorLoop: FacilitatorLoop | null = null;
     private intervalId: NodeJS.Timeout | null = null;
-    private intervalMs: number = 5 * 60 * 1000; // 5 minutes
+    private intervalMs: number = 10 * 1000; // 10 seconds (Turbo Mode for Demo)
 
     constructor() {
         this.autoAdapter = new AutoVvsAdapter();
@@ -69,7 +70,17 @@ export class YieldScheduler {
                 const activeMerchants = await WalletSnapshot.distinct("merchantId");
 
                 for (const merchantId of activeMerchants) {
-                    await this.facilitatorLoop.runCycle(merchantId, false); // Live mode logic handled inside by Env flag
+                    // Fetch dynamic wallet address for this merchant from DB
+                    const merchant = await Merchant.findOne({ merchantId });
+                    const dynamicAgentAddr = merchant?.wallet?.address;
+
+                    if (!dynamicAgentAddr) {
+                        console.warn(`⚠️ skipping merchant ${merchantId}: No wallet address found.`);
+                        continue;
+                    }
+
+                    console.log(`DEBUG: Scheduler passing address '${dynamicAgentAddr}' for merchant '${merchantId}'`);
+                    await this.facilitatorLoop.runCycle(merchantId, dynamicAgentAddr, false);
                 }
             }
 

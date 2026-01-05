@@ -42,17 +42,22 @@ export class WalletWatcher {
         // Parallel Execution
         const results = await Promise.allSettled(
             merchants.map(async (merchant) => {
-                if (merchant.wallet && merchant.wallet.address) {
-                    const snap = await this.getSnapshot(merchant.wallet.address);
-                    // Persist
-                    await WalletSnapshot.findOneAndUpdate(
-                        { merchantId: merchant.merchantId },
-                        { ...snap, merchantId: merchant.merchantId }, // Upsert latest state
-                        { upsert: true, new: true }
-                    );
-                    return `${merchant.merchantId}: OK`;
+                try {
+                    if (merchant.wallet && merchant.wallet.address) {
+                        const snap = await this.getSnapshot(merchant.wallet.address);
+                        // Persist
+                        await WalletSnapshot.findOneAndUpdate(
+                            { merchantId: merchant.merchantId },
+                            { ...snap, merchantId: merchant.merchantId }, // Upsert latest state
+                            { upsert: true, new: true }
+                        );
+                        return `${merchant.merchantId}: OK`;
+                    }
+                    return `${merchant.merchantId}: No Wallet`;
+                } catch (e: any) {
+                    console.error(`❌ [WalletWatcher] Error for ${merchant.merchantId}:`, e.message);
+                    throw e; // Propagate to show as rejected in allSettled
                 }
-                return `${merchant.merchantId}: No Wallet`;
             })
         );
 
@@ -63,13 +68,8 @@ export class WalletWatcher {
 
     async getSnapshot(address: string): Promise<any> {
         // 1. Try staticCall for fresh rate, fallback to stored
-        let rate = 0n;
-        try {
-            rate = await this.tUsdcContract.exchangeRateCurrent.staticCall();
-        } catch (e) {
-            // console.warn("[WalletWatcher] staticCall failed, falling back to stored rate:", e);
-            rate = await this.tUsdcContract.exchangeRateStored();
-        }
+        // 1. Try staticCall for fresh rate, fallback to stored
+        const rate = await this.tUsdcContract.exchangeRateStored();
 
         const [algoParams, usdcParams, tParams] = await Promise.allSettled([
             this.provider.getBalance(address),
@@ -80,6 +80,8 @@ export class WalletWatcher {
         const cro = algoParams.status === "fulfilled" ? algoParams.value : 0n;
         const usdc = usdcParams.status === "fulfilled" ? usdcParams.value : 0n;
         const tUsdc = tParams.status === "fulfilled" ? tParams.value : 0n;
+
+        console.log(`🔍 [Watcher] ${address.slice(0, 6)}... | CRO: ${ethers.formatEther(cro)} | USDC: ${ethers.formatUnits(usdc, 6)} | tUSDC: ${tUsdc}`);
 
         return {
             croBalance: cro.toString(),

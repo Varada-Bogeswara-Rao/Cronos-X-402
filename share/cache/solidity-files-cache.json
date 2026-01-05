@@ -1,0 +1,1091 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\MockERC20.sol": {
+      "lastModificationDate": 1767193692510,
+      "contentHash": "f0e0a17bbe5dd328ed72659b56650047",
+      "sourceName": "contracts/MockERC20.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/ERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "MockERC20"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\ERC20.sol": {
+      "lastModificationDate": 1767193723036,
+      "contentHash": "59dfce11284f2636db261df9b6a18f81",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/ERC20.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IERC20.sol",
+        "./extensions/IERC20Metadata.sol",
+        "../../utils/Context.sol",
+        "../../interfaces/draft-IERC6093.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ERC20"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\IERC20.sol": {
+      "lastModificationDate": 1767193723292,
+      "contentHash": "9261adf6457863de3e9892f51317ec89",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.4.16"
+      ],
+      "artifacts": [
+        "IERC20"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\node_modules\\@openzeppelin\\contracts\\utils\\Context.sol": {
+      "lastModificationDate": 1767193722854,
+      "contentHash": "67bfbc07588eb8683b3fd8f6f909563e",
+      "sourceName": "@openzeppelin/contracts/utils/Context.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Context"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\node_modules\\@openzeppelin\\contracts\\interfaces\\draft-IERC6093.sol": {
+      "lastModificationDate": 1767193722930,
+      "contentHash": "5041977bbe908de2e6ed0270447f79ad",
+      "sourceName": "@openzeppelin/contracts/interfaces/draft-IERC6093.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.8.4"
+      ],
+      "artifacts": [
+        "IERC1155Errors",
+        "IERC20Errors",
+        "IERC721Errors"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\extensions\\IERC20Metadata.sol": {
+      "lastModificationDate": 1767193723313,
+      "contentHash": "513778b30d2750f5d2b9b19bbcf748a5",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../IERC20.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.2"
+      ],
+      "artifacts": [
+        "IERC20Metadata"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\MockVault.sol": {
+      "lastModificationDate": 1767193694402,
+      "contentHash": "41c6515598de8796e499082ab80ad265",
+      "sourceName": "contracts/MockVault.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "@openzeppelin/contracts/token/ERC20/ERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "MockVault"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\CarefulMath.sol": {
+      "lastModificationDate": 1767355267080,
+      "contentHash": "0337de617fb52552ebfd1544176dec5f",
+      "sourceName": "contracts/tectonic/CarefulMath.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "CarefulMath"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\Exponential.sol": {
+      "lastModificationDate": 1767355267087,
+      "contentHash": "32e2f3be3548b5e35ccfc5e712c2ca38",
+      "sourceName": "contracts/tectonic/Exponential.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./CarefulMath.sol",
+        "./ExponentialNoError.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "Exponential"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\ExponentialNoError.sol": {
+      "lastModificationDate": 1767355267088,
+      "contentHash": "0a8a0dd12c704d6e26cd4093b0d2bc11",
+      "sourceName": "contracts/tectonic/ExponentialNoError.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "ExponentialNoError"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\TToken.sol": {
+      "lastModificationDate": 1767355188473,
+      "contentHash": "0ee7486c724060517661acee8a05f126",
+      "sourceName": "contracts/tectonic/TToken.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./TectonicCoreInterface.sol",
+        "./TTokenInterfaces.sol",
+        "./ErrorReporter.sol",
+        "./Exponential.sol",
+        "./EIP20Interface.sol",
+        "./InterestRateModel.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "TToken"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\TectonicCoreInterface.sol": {
+      "lastModificationDate": 1767355267095,
+      "contentHash": "50081583bd0f757a8268e0cdcb57235c",
+      "sourceName": "contracts/tectonic/TectonicCoreInterface.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./TToken.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "TectonicCoreInterface"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\TTokenInterfaces.sol": {
+      "lastModificationDate": 1767355267156,
+      "contentHash": "ceb78c027af5a6d947ce084e8d903aae",
+      "sourceName": "contracts/tectonic/TTokenInterfaces.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./TectonicCoreInterface.sol",
+        "./InterestRateModel.sol",
+        "./EIP20NonStandardInterface.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "TDelegateInterface",
+        "TDelegationStorage",
+        "TDelegatorInterface",
+        "TErc20Interface",
+        "TErc20Storage",
+        "TTokenInterface",
+        "TTokenStorage"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\ErrorReporter.sol": {
+      "lastModificationDate": 1767355267086,
+      "contentHash": "e40742d79f59c760826152174df8b05c",
+      "sourceName": "contracts/tectonic/ErrorReporter.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "TectonicCoreErrorReporter",
+        "TokenErrorReporter"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\EIP20Interface.sol": {
+      "lastModificationDate": 1767355267083,
+      "contentHash": "4020824b914d2483a82705c9390bd616",
+      "sourceName": "contracts/tectonic/EIP20Interface.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "EIP20Interface"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\InterestRateModel.sol": {
+      "lastModificationDate": 1767355267089,
+      "contentHash": "d693e62ba3b9f4b933452a773fa68ebb",
+      "sourceName": "contracts/tectonic/InterestRateModel.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "InterestRateModel"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\EIP20NonStandardInterface.sol": {
+      "lastModificationDate": 1767355267084,
+      "contentHash": "4c34c19acdeafc1c45c92f293eea1316",
+      "sourceName": "contracts/tectonic/EIP20NonStandardInterface.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "EIP20NonStandardInterface"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\TErc20Delegator.sol": {
+      "lastModificationDate": 1767355138518,
+      "contentHash": "b89a0a5257c120c129ed89c2fa8ec9d8",
+      "sourceName": "contracts/tectonic/TErc20Delegator.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./TTokenInterfaces.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "TErc20Delegator"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\JumpRateModel.sol": {
+      "lastModificationDate": 1767355267092,
+      "contentHash": "bfe4f06ae12732193578283f3b69b061",
+      "sourceName": "contracts/tectonic/JumpRateModel.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./InterestRateModel.sol",
+        "./ExponentialNoError.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "JumpRateModel"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\TectonicCore.sol": {
+      "lastModificationDate": 1767361936754,
+      "contentHash": "75dbc66547823adb950829d148ef433e",
+      "sourceName": "contracts/tectonic/TectonicCore.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./ErrorReporter.sol",
+        "./TectonicCoreStorage.sol",
+        "./ExponentialNoError.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "TectonicCoreImpl"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\TectonicCoreStorage.sol": {
+      "lastModificationDate": 1767361922939,
+      "contentHash": "11fbaaf2af270abda6d6afbbe1065ad8",
+      "sourceName": "contracts/tectonic/TectonicCoreStorage.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./PriceOracle.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "TectonicCoreStorage",
+        "TectonicCoreV1Storage",
+        "TectonicCoreV2Storage",
+        "TectonicCoreV3Storage",
+        "TectonicCoreV4Storage",
+        "TectonicCoreV5Storage",
+        "TectonicCoreV6Storage",
+        "TectonicSocketAdminStorage"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\PriceOracle.sol": {
+      "lastModificationDate": 1767355267093,
+      "contentHash": "6260474378e05bb6de20dbede5727de7",
+      "sourceName": "contracts/tectonic/PriceOracle.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./TToken.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "PriceOracle"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\TectonicSocket.sol": {
+      "lastModificationDate": 1767355013523,
+      "contentHash": "4d23869e35802c08097dcf2fce6c2c04",
+      "sourceName": "contracts/tectonic/TectonicSocket.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./ErrorReporter.sol",
+        "./TectonicCoreStorage.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "TectonicSocket"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\SimplePriceOracle.sol": {
+      "lastModificationDate": 1767355267094,
+      "contentHash": "ff807b07c24e053c597df1f84cf4e115",
+      "sourceName": "contracts/tectonic/SimplePriceOracle.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./PriceOracle.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "SimplePriceOracle"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\TErc20Delegate.sol": {
+      "lastModificationDate": 1767355181511,
+      "contentHash": "864bc1025e8aef170adb409d0567571d",
+      "sourceName": "contracts/tectonic/TErc20Delegate.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./TToken.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "TErc20Delegate"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\MockInterestRateModel.sol": {
+      "lastModificationDate": 1767362687722,
+      "contentHash": "cb111a269f71bf7b7ba828502e7cd38e",
+      "sourceName": "contracts/tectonic/MockInterestRateModel.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "MockInterestRateModel"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\TectonicCoreTest.sol": {
+      "lastModificationDate": 1767361503939,
+      "contentHash": "468d802b638f76b370253ef10c234c4e",
+      "sourceName": "contracts/tectonic/TectonicCoreTest.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "TectonicCoreTest"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\TectonicSocketInterface.sol": {
+      "lastModificationDate": 1767355267097,
+      "contentHash": "bd8c63640016a45b1cc01accf9f0ebeb",
+      "sourceName": "contracts/tectonic/TectonicSocketInterface.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "TectonicSocketInterface"
+      ]
+    },
+    "E:\\projects\\cronos-merchant-gateway\\share\\contracts\\tectonic\\Tonic.sol": {
+      "lastModificationDate": 1767355267098,
+      "contentHash": "646f4d46fac72d233293ac8a4925463a",
+      "sourceName": "contracts/tectonic/Tonic.sol",
+      "solcConfig": {
+        "version": "0.5.16",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.16"
+      ],
+      "artifacts": [
+        "Tonic"
+      ]
+    }
+  }
+}

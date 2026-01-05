@@ -3,7 +3,7 @@ import { Schema, model, Document } from 'mongoose';
 export interface IYieldPosition extends Document {
     merchantId: string;
     protocol: string; // e.g., "TECTONIC_USDC"
-    status: "OPEN" | "CLOSED";
+    status: "OPEN" | "CLOSED" | "ACTIVE";
 
     /** Net Principal (Deposits - Withdrawals) in underlying asset units (USDC) */
     principalAmount: string;
@@ -21,7 +21,7 @@ export interface IYieldPosition extends Document {
 const YieldPositionSchema = new Schema({
     merchantId: { type: String, required: true, index: true },
     protocol: { type: String, required: true, index: true },
-    status: { type: String, enum: ["OPEN", "CLOSED"], default: "OPEN" },
+    status: { type: String, enum: ["OPEN", "CLOSED", "ACTIVE"], default: "OPEN" },
 
     principalAmount: { type: String, required: true, default: "0" },
     principalDecimals: { type: Number, required: true, default: 6 },

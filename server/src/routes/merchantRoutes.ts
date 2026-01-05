@@ -154,13 +154,25 @@ router.get("/:merchantId/sales", async (req: Request, res: Response): Promise<an
 // ⚡️ Helpful for Frontend: Check if a user returning to the site already has a merchant profile
 router.get("/lookup/:walletAddress", async (req: Request, res: Response): Promise<any> => {
     try {
-        const merchant = await Merchant.findOne({
-            "wallet.address": req.params.walletAddress.toLowerCase()
-        }).select('merchantId business status').lean();
+        const incomingAddress = req.params.walletAddress;
+        console.log(`🔎 LOOKUP REQUEST: ${incomingAddress}`);
 
-        if (!merchant) return res.status(404).json({ message: 'No merchant found' });
+        const query = {
+            "wallet.address": incomingAddress.toLowerCase()
+        };
+        console.log(`🔎 QUERY:`, JSON.stringify(query));
+
+        const merchant = await Merchant.findOne(query).select('merchantId business status').lean();
+
+        if (!merchant) {
+            console.log("❌ LOOKUP FAILED: Merchant not found in DB.");
+            return res.status(404).json({ message: 'No merchant found' });
+        }
+
+        console.log(`✅ LOOKUP SUCCESS: Found ${merchant.merchantId}`);
         res.json(merchant);
     } catch (error) {
+        console.error("❌ LOOKUP ERROR:", error);
         res.status(500).json({ message: 'Lookup failed' });
     }
 });

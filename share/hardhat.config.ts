@@ -27,7 +27,15 @@ const config: HardhatUserConfig = {
     },
     networks: {
         hardhat: {
+            chainId: 31337,
+            hardfork: "shanghai",
+            forking: {
+                url: "https://evm.cronos.org"
+            }
         },
+        localhost: {
+            url: "http://127.0.0.1:8545"
+        }
     },
 };
 

@@ -33,7 +33,11 @@ export class ProfitEngine {
         // 1. Fetch Data
         const snapshot = await WalletSnapshot.findOne({ merchantId }).sort({ timestamp: -1 });
         // NOTE: We might want to create a position if none exists, but for now strict.
-        let position = await YieldPosition.findOne({ merchantId, status: "OPEN" });
+        // Query for either OPEN or ACTIVE
+        let position = await YieldPosition.findOne({
+            merchantId,
+            status: { $in: ["OPEN", "ACTIVE"] }
+        });
         if (!position) {
             // Treat as 0 principal position for investment analysis
             // But for MVP, assume position exists or we create one? 
@@ -54,10 +58,13 @@ export class ProfitEngine {
         const principalBN = BigInt(position.principalAmount || "0");
         const principalUsd = Number(ethers.formatUnits(principalBN, 6));
 
+        console.log(`DEBUG: Merchant ${merchantId} | Principal: $${principalUsd} | RAW: ${position.principalAmount}`);
         const tUsdcBN = BigInt(snapshot.tUsdcBalance || "0");
         const rateBN = BigInt(snapshot.exchangeRate || "1000000000000000000"); // 1e18
         const currentUnderlyingBN = (tUsdcBN * rateBN) / 1000000000000000000n;
         const currentValueUsd = Number(ethers.formatUnits(currentUnderlyingBN, 6));
+
+        console.log(`DEBUG: [ProfitLogic] CurrentVal: $${currentValueUsd} | Diff: $${(currentValueUsd - principalUsd).toFixed(6)}`);
 
         // 4. Profitability
         const unrealizedGain = currentValueUsd - principalUsd;
