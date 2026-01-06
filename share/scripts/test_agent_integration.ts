@@ -73,22 +73,18 @@ async function main() {
 
     // Initialize Agent
     // Risk Config: Max 50% allocation, Min Idle 1000.
+    // Risk Config: Max 50% allocation, Min Idle 1000.
     const agent = new YieldAgent(facilitator.address, {
         maxYieldAllocationPercent: 0.5, // 50%
         minIdleBalance: BigInt(ethers.parseEther("1000")),
-        maxDailyYieldMoves: 10
+        maxDailyYieldMoves: 10,
+        gasBufferCro: BigInt(ethers.parseEther("5")) // Added: 5 CRO Buffer
     });
 
     // -------------------------------------------------------------
     // 3. GENERATE DECISION (Mocked Verification)
     // -------------------------------------------------------------
     console.log("\n[3] Generating Decision...");
-
-    // We mock a signed decision from the Facilitator to APPROVE supply.
-    // Since verification logic involves signatures, and we want to test the *Execution Flow*,
-    // we might hit signature issues if `verifyDecision` is strict.
-    // However, `YieldAgent` calls `verifyDecision`.
-    // Let's create a valid decision structure.
 
     const decision: any = {
         decision: "APPROVE",
@@ -99,30 +95,14 @@ async function main() {
         rationale: "High APY detected",
         timestamp: Date.now(),
         // Fields required by verifyDecision
-        agentAddress: user.address, // Correct Agent Adress
+        agentAddress: user.address,
         vaultAddress: tUsdcAddr,
         chainId: 25,
         nonce: "1",
         issuedAt: Math.floor(Date.now() / 1000),
         expiresAt: Math.floor(Date.now() / 1000) + 3600, // +1 Hour
-        signature: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" // Mock signature (invalid length/format but string)
+        signature: "0xMockSignature" // Mock signature
     };
-
-    // NOTE: verifyDecision in `checks/verifyDecision.ts` likely checks the signature against `facilitatorAddress`.
-    // If it does real ecrecover, this "0xMOCKED" will fail.
-    // We might need to generate a REAL signature from the facilitator signer.
-
-    // Let's try to sign it real quick if we can.
-    // Payload usually matches `YieldDecision` structure.
-    // Assuming `verifyDecision` reconstructs the message.
-    // For this TEST, we will bypass verification failure by wrapping the execute call 
-    // or by mocking verifyDecision if possible. 
-    // Actually, let's look at YieldAgent.ts... it calls `verifyDecision` at line 50.
-    // If it throws, execution stops.
-    // We can try to Mock the `verifyDecision` import? Hard in this script.
-    // Better: Generate a valid signature.
-    // The message format depends on `verifyDecision`.
-    // For now, let's try running. If it fails on signature, we'll fix signature.
 
     // -------------------------------------------------------------
     // 4. EXECUTE
@@ -130,30 +110,14 @@ async function main() {
     console.log("\n[4] Executing Decision...");
 
     const currentBalance = await usdc.balanceOf(user.address); // 5000
-    // Risk Engine should allow:
-    // Max Alloc = 2500 (50%)
-    // Liquidity Limit = 5000 - 1000 = 4000
-    // Safe Amount = 2500.
 
     try {
-        // We know verifyDecision might fail. 
-        // We are patching YieldAgent in the fly? No.
-        // Let's assume for a moment we can pass it.
-        // If not, we will need to create a `MockYieldAgent` that inherits and skips verification.
-
-        // Wait, we can implement a Mock Agent right here!
-        class TestYieldAgent extends YieldAgent {
-            // Override executeDecision to skip verification for testing?
-            // No, executeDecision is the method we want to test.
-            // But we can override verifyDecision if it was a method of the class. It is not.
-            // It is an imported function.
-        }
-
         // Just run it. If verify fails, the test fails, and we know we hit the agent correctly.
         const result = await agent.executeDecision(
             decision,
             user.address,
             currentBalance,
+            BigInt(ethers.parseEther("100")), // Added: currentGasBalance (Mocked 100 CRO)
             0,
             executor
         );

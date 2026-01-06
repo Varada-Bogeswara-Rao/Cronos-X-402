@@ -98,7 +98,7 @@ export class ProfitEngine {
         }
         // PRIORITY 4: INVESTMENT (Surplus)
         else {
-            if (walletUsdc > 20.0) {
+            if (walletUsdc > 1000.0) { // Prod: Only invest if > $1,000 (Gas Efficiency)
                 rec = "APPROVE";
             }
         }

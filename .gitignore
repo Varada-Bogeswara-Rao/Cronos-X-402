@@ -48,9 +48,18 @@ node_modules/
 dist/
 build/
 
-# Docker logs
+# Hardhat
+artifacts/
+cache/
+typechain-types/
+
+# Repomix
+repomix-output.xml
+repomix.config.json
+
+# Logs & Diagnostics
+diag_report.txt
 *.log
-docker-compose.override.yml
 
 # OS files
 .DS_Store
