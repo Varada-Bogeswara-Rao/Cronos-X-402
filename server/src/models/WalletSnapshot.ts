@@ -4,8 +4,6 @@ export interface IWalletSnapshot extends Document {
     merchantId: string;
     usdcBalance: string;
     croBalance: string;
-    tUsdcBalance: string;
-    exchangeRate: string;
     timestamp: number;
     version: number;
 }
@@ -14,8 +12,6 @@ const WalletSnapshotSchema = new Schema({
     merchantId: { type: String, required: true, index: true },
     usdcBalance: { type: String, required: true },
     croBalance: { type: String, required: true },
-    tUsdcBalance: { type: String, required: true },
-    exchangeRate: { type: String, required: true },
     timestamp: { type: Number, required: true, default: Date.now },
     version: { type: Number, default: 1 }
 });

@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -23,8 +14,7 @@ const getProvider = () => {
 };
 // 🔒 Canonical path helper (SINGLE SOURCE OF TRUTH)
 const canonicalPath = (path) => path.replace(/\/$/, "") || "/";
-router.post("/verify", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e;
+router.post("/verify", async (req, res) => {
     try {
         const merchantId = req.headers["x-merchant-id"];
         const { paymentProof, expectedAmount, currency, path, method } = req.body;
@@ -46,7 +36,7 @@ router.post("/verify", (req, res) => __awaiter(void 0, void 0, void 0, function*
         // --------------------------------------------------
         // 1. Replay Protection
         // --------------------------------------------------
-        const existingTx = yield Transaction_1.default.findOne({ txHash: paymentProof }).lean();
+        const existingTx = await Transaction_1.default.findOne({ txHash: paymentProof }).lean();
         if (existingTx) {
             return res.status(402).json({
                 verified: false,
@@ -56,8 +46,8 @@ router.post("/verify", (req, res) => __awaiter(void 0, void 0, void 0, function*
         // --------------------------------------------------
         // 2. Fetch Merchant
         // --------------------------------------------------
-        const merchant = yield Merchant_1.default.findOne({ merchantId }).lean();
-        if (!merchant || !((_a = merchant.status) === null || _a === void 0 ? void 0 : _a.active)) {
+        const merchant = await Merchant_1.default.findOne({ merchantId }).lean();
+        if (!merchant || !merchant.status?.active) {
             return res.status(403).json({
                 error: "MERCHANT_INACTIVE"
             });
@@ -65,13 +55,13 @@ router.post("/verify", (req, res) => __awaiter(void 0, void 0, void 0, function*
         // --------------------------------------------------
         // 3. 🔥 ROUTE REGISTRATION CHECK (MISSING EARLIER)
         // --------------------------------------------------
-        const route = (_c = (_b = merchant.api) === null || _b === void 0 ? void 0 : _b.routes) === null || _c === void 0 ? void 0 : _c.find((r) => r.method === cleanMethod &&
+        const route = merchant.api?.routes?.find((r) => r.method === cleanMethod &&
             canonicalPath(r.path) === cleanPath);
         if (!route) {
             console.error("[FACILITATOR] ROUTE_NOT_REGISTERED", {
                 cleanMethod,
                 cleanPath,
-                registeredRoutes: (_d = merchant.api) === null || _d === void 0 ? void 0 : _d.routes
+                registeredRoutes: merchant.api?.routes
             });
             return res.status(402).json({
                 error: "ROUTE_NOT_REGISTERED",
@@ -82,14 +72,14 @@ router.post("/verify", (req, res) => __awaiter(void 0, void 0, void 0, function*
         // 4. Chain Verification
         // --------------------------------------------------
         const provider = getProvider();
-        const receipt = yield provider.getTransactionReceipt(paymentProof);
+        const receipt = await provider.getTransactionReceipt(paymentProof);
         if (!receipt || receipt.status !== 1) {
             return res.status(402).json({
                 verified: false,
                 error: "TX_NOT_FOUND_OR_FAILED"
             });
         }
-        const tx = yield provider.getTransaction(paymentProof);
+        const tx = await provider.getTransaction(paymentProof);
         if (!tx || !tx.from) {
             return res.status(402).json({
                 verified: false,
@@ -98,7 +88,7 @@ router.post("/verify", (req, res) => __awaiter(void 0, void 0, void 0, function*
         }
         const payer = tx.from.toLowerCase();
         const merchantAddress = merchant.wallet.address.toLowerCase();
-        const network = yield provider.getNetwork();
+        const network = await provider.getNetwork();
         const expectedChainId = BigInt(process.env.CRONOS_CHAIN_ID || 338);
         if (network.chainId !== expectedChainId) {
             return res.status(402).json({ error: "WRONG_NETWORK" });
@@ -127,11 +117,11 @@ router.post("/verify", (req, res) => __awaiter(void 0, void 0, void 0, function*
                         break;
                     }
                 }
-                catch (_f) { }
+                catch { }
             }
         }
         if (currency === "CRO" || currency === "TCRO") {
-            if (((_e = tx.to) === null || _e === void 0 ? void 0 : _e.toLowerCase()) === merchantAddress &&
+            if (tx.to?.toLowerCase() === merchantAddress &&
                 tx.value >= ethers_1.ethers.parseEther(expectedAmount.toString())) {
                 verified = true;
             }
@@ -139,7 +129,7 @@ router.post("/verify", (req, res) => __awaiter(void 0, void 0, void 0, function*
         // --------------------------------------------------
         // 6. Confirmation Check
         // --------------------------------------------------
-        const confirmations = (yield provider.getBlockNumber()) - receipt.blockNumber;
+        const confirmations = (await provider.getBlockNumber()) - receipt.blockNumber;
         if (confirmations < CONFIRMATIONS_REQUIRED) {
             return res.status(402).json({
                 verified: false,
@@ -157,7 +147,7 @@ router.post("/verify", (req, res) => __awaiter(void 0, void 0, void 0, function*
         // --------------------------------------------------
         // 7. Persist Transaction
         // --------------------------------------------------
-        yield Transaction_1.default.create({
+        await Transaction_1.default.create({
             txHash: paymentProof,
             merchantId,
             payer,
@@ -180,5 +170,5 @@ router.post("/verify", (req, res) => __awaiter(void 0, void 0, void 0, function*
             message: "Blockchain verification failed"
         });
     }
-}));
+});
 exports.default = router;

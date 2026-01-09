@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -16,11 +7,11 @@ const express_1 = require("express");
 const Merchant_1 = __importDefault(require("../models/Merchant"));
 const router = (0, express_1.Router)();
 const canonicalPath = (p) => (p.startsWith("/") ? p : `/${p}`).replace(/\/$/, "") || "/";
-router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post("/", async (req, res) => {
     console.log("🔥 PRICE CHECK ROUTE HIT");
     const { merchantId, method, path } = req.body;
     console.log("[RAW INPUT]", { merchantId, method, path });
-    const merchant = yield Merchant_1.default.findOne({ merchantId }).lean();
+    const merchant = await Merchant_1.default.findOne({ merchantId }).lean();
     console.log("[MERCHANT FOUND]", !!merchant);
     if (!merchant) {
         return res.status(404).json({ error: "MERCHANT_NOT_FOUND" });
@@ -46,6 +37,13 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             message: "Debug logs above show mismatch"
         });
     }
+    // ⚡️ BUG FIX: Respect the "Active" Status!
+    if (route.active === false) {
+        return res.status(400).json({
+            error: "ROUTE_DISABLED",
+            message: "Api has been disabled"
+        });
+    }
     return res.json({
         merchantId,
         price: route.price,
@@ -53,5 +51,5 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         payTo: merchant.wallet.address,
         network: merchant.wallet.network
     });
-}));
+});
 exports.default = router;

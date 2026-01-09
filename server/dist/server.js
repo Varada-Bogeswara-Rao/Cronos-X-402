@@ -13,7 +13,7 @@ const db_1 = __importDefault(require("./db"));
 const merchantRoutes_1 = __importDefault(require("./routes/merchantRoutes"));
 const priceCheck_1 = __importDefault(require("./routes/priceCheck"));
 const verifyPayment_1 = __importDefault(require("./facilitator/verifyPayment"));
-const gateway_1 = __importDefault(require("./routes/gateway"));
+const sandbox_1 = __importDefault(require("./routes/sandbox"));
 dotenv_1.default.config();
 // 1. Environment Validation
 const requiredEnv = ['MONGODB_URI', 'CRONOS_RPC_URL'];
@@ -33,18 +33,28 @@ app.use(express_1.default.json({ limit: '10kb' }));
 app.set("trust proxy", 1);
 const limiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
-    max: 100
+    max: 5000 // Relaxed for local dev/polling
 });
 app.use('/api/', limiter);
 // 4. Database & Routes
 (0, db_1.default)();
+const analytics_1 = __importDefault(require("./routes/analytics"));
+const transactions_1 = __importDefault(require("./routes/transactions"));
+// ...
+// [NEW] Dashboard Analytics & Data - MUST BE BEFORE GATEWAY CATCH-ALL
+// [NEW] Dashboard Analytics & Data - MUST BE BEFORE GATEWAY CATCH-ALL
+app.use('/api/analytics', analytics_1.default);
+app.use('/api/transactions', transactions_1.default);
+// [REMOVED] Yield Intelligence Ops
+// [REMOVED] Yield Sources
 app.use('/api/merchants', merchantRoutes_1.default);
 app.use('/api/price-check', priceCheck_1.default);
 app.use('/api/facilitator', verifyPayment_1.default);
-app.use('/api', gateway_1.default);
+app.use('/api/sandbox', sandbox_1.default); // [SECURE] Sandbox Namespace
 app.get('/', (req, res) => {
     res.json({ status: 'online', service: 'Cronos Merchant Gateway' });
 });
+// [REMOVED] Background Schedulers
 // 5. Global Error Handler
 app.use((err, req, res, next) => {
     console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
@@ -55,4 +65,11 @@ app.use((err, req, res, next) => {
 });
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-});
+}); // Forced Restart
+// Restart 2
+// Restart 3
+// Restart 4
+// Restart 5
+// Restart 6
+// Restart 7
+// Restart Clean

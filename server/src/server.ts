@@ -50,12 +50,8 @@ import transactionsRouter from './routes/transactions';
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/transactions', transactionsRouter);
 
-// [NEW] Yield Intelligence Ops (Phase F - Read Only)
-import yieldOpsRouter from './routes/yieldOps';
-app.use('/api/yield', yieldOpsRouter);
-
-import yieldSourcesRouter from './routes/yieldSources';
-app.use('/api/yield-sources', yieldSourcesRouter);
+// [REMOVED] Yield Intelligence Ops
+// [REMOVED] Yield Sources
 
 app.use('/api/merchants', merchantRoutes);
 app.use('/api/price-check', priceCheck);
@@ -66,10 +62,7 @@ app.get('/', (req: Request, res: Response) => {
   res.json({ status: 'online', service: 'Cronos Merchant Gateway' });
 });
 
-// [NEW] Background Schedulers
-import { YieldScheduler } from './services/YieldScheduler';
-const yieldScheduler = new YieldScheduler();
-yieldScheduler.start();
+// [REMOVED] Background Schedulers
 
 
 // 5. Global Error Handler
