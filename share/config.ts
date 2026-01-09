@@ -12,5 +12,4 @@ export interface AgentConfig {
 
   // Optional context
   merchantId?: string;
-  pendingYield?: number;
 }

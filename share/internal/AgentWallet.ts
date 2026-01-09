@@ -270,13 +270,7 @@ export class AgentWallet {
             return { allow: false, reason: `Daily limit exceeded (${this.spentToday.toFixed(2)} + ${request.amount} > ${this.dailyLimit})` };
         }
 
-        // 5. Yield-only mode (optional)
-        if (
-            context.pendingYield !== undefined &&
-            context.pendingYield < request.amount
-        ) {
-            return { allow: false, reason: "Insufficient yield balance" };
-        }
+
 
         return { allow: true };
     }

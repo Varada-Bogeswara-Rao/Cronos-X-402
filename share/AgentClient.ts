@@ -50,7 +50,6 @@ export class AgentClient {
     this.context = {
       chainId: config.chainId,
       merchantId: config.merchantId,
-      pendingYield: config.pendingYield,
     };
   }
 
