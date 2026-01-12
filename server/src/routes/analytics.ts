@@ -1,90 +1,66 @@
-import { Router, Request, Response } from "express";
-import Transaction from "../models/Transaction";
-import mongoose from "mongoose";
 
-const router = Router();
+import express from "express";
+import PaymentAttempt from "../models/PaymentAttempt";
 
-// GET /api/analytics/:merchantId
-// Returns global stats (Revenue, Count, Avg Price)
-router.get("/:merchantId", async (req: Request, res: Response) => {
+const router = express.Router();
+
+// POST /api/analytics/log
+// Used by the SDK to report decisions (or by the server to log verified payments)
+router.post("/log", async (req, res) => {
     try {
-        const { merchantId } = req.params;
+        const {
+            agentAddress,
+            url,
+            merchantId,
+            amount,
+            currency,
+            decision,
+            reason,
+            txHash,
+            chainId
+        } = req.body;
 
-        const stats = await Transaction.aggregate([
-            { $match: { merchantId } },
-            {
-                $group: {
-                    _id: null,
-                    totalRevenue: { $sum: { $toDouble: "$amount" } },
-                    totalRequests: { $sum: 1 },
-                    avgPrice: { $avg: { $toDouble: "$amount" } }
-                }
-            }
-        ]);
+        if (!agentAddress || !merchantId || !decision) {
+            return res.status(400).json({ error: "Missing required fields" });
+        }
 
-        // Last 24h Revenue
-        const oneDayAgo = new Date();
-        oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-
-        const revenue24h = await Transaction.aggregate([
-            { $match: { merchantId, createdAt: { $gte: oneDayAgo } } },
-            { $group: { _id: null, total: { $sum: { $toDouble: "$amount" } } } }
-        ]);
-
-        // Last 7d Revenue
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-        const revenue7d = await Transaction.aggregate([
-            { $match: { merchantId, createdAt: { $gte: sevenDaysAgo } } },
-            { $group: { _id: null, total: { $sum: { $toDouble: "$amount" } } } }
-        ]);
-
-        res.json({
-            totalRevenue: stats[0]?.totalRevenue || 0,
-            totalRequests: stats[0]?.totalRequests || 0,
-            avgPrice: stats[0]?.avgPrice || 0,
-            revenue24h: revenue24h[0]?.total || 0,
-            revenue7d: revenue7d[0]?.total || 0
+        const log = new PaymentAttempt({
+            agentAddress,
+            url,
+            merchantId,
+            amount,
+            currency: currency || "USDC",
+            decision,
+            reason,
+            txHash,
+            chainId: chainId || 25
         });
-    } catch (error) {
-        console.error("Analytics Error:", error);
-        res.status(500).json({ error: "Failed to fetch analytics" });
+
+        await log.save();
+        res.status(201).json({ success: true, id: log._id });
+    } catch (err: any) {
+        console.error("Analytics Log Error:", err);
+        res.status(500).json({ error: err.message });
     }
 });
 
-// GET /api/analytics/:merchantId/routes
-// Returns per-route performance
-router.get("/:merchantId/routes", async (req: Request, res: Response) => {
+// GET /api/analytics/history
+// Used by the Dashboard to show tables
+router.get("/history", async (req, res) => {
     try {
-        const { merchantId } = req.params;
+        const { agentAddress, merchantId, limit } = req.query;
+        const query: any = {};
 
-        const routeStats = await Transaction.aggregate([
-            { $match: { merchantId } },
-            {
-                $group: {
-                    _id: { path: "$path", method: "$method" },
-                    totalRevenue: { $sum: { $toDouble: "$amount" } },
-                    requestCount: { $sum: 1 },
-                    avgPrice: { $avg: { $toDouble: "$amount" } },
-                    lastTransaction: { $max: "$createdAt" }
-                }
-            },
-            { $sort: { totalRevenue: -1 } } // Highest revenue first
-        ]);
+        if (agentAddress) query.agentAddress = agentAddress;
+        if (merchantId) query.merchantId = merchantId;
 
-        res.json(routeStats.map(s => ({
-            path: s._id.path,
-            method: s._id.method,
-            totalRevenue: s.totalRevenue,
-            requestCount: s.requestCount,
-            avgPrice: s.avgPrice,
-            lastTransaction: s.lastTransaction
-        })));
+        const logs = await PaymentAttempt.find(query)
+            .sort({ timestamp: -1 })
+            .limit(Number(limit) || 50);
 
-    } catch (error) {
-        console.error("Route Analytics Error:", error);
-        res.status(500).json({ error: "Failed to fetch route analytics" });
+        res.json(logs);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
     }
 });
 

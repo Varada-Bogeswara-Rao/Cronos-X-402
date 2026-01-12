@@ -50,13 +50,10 @@ import transactionsRouter from './routes/transactions';
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/transactions', transactionsRouter);
 
-// [REMOVED] Yield Intelligence Ops
-// [REMOVED] Yield Sources
-
 app.use('/api/merchants', merchantRoutes);
 app.use('/api/price-check', priceCheck);
 app.use('/api/facilitator', verifyPayment);
-app.use('/api/sandbox', sandboxRouter); // [SECURE] Sandbox Namespace
+app.use('/api/sandbox', sandboxRouter); // [SECURE] Sandbox namespace
 
 app.get('/', (req: Request, res: Response) => {
   res.json({ status: 'online', service: 'Cronos Merchant Gateway' });

@@ -7,8 +7,10 @@ export interface AgentConfig {
 
   // Optional safety controls
   dailyLimit?: number;
+  maxPerTransaction?: number;
   allowedMerchants?: string[];
   trustedFacilitators?: string[];
+  analyticsUrl?: string; // [NEW] Centralized logging
 
   // Optional context
   merchantId?: string;

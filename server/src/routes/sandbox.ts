@@ -26,7 +26,12 @@ router.all("/:merchantId/*", async (req: Request, res: Response) => {
         // req.path will be /:merchantId/some/path
         // We need to strip the /:merchantId part
         const pathParts = req.path.split('/'); // ['', 'merchantId', 'some', 'path']
-        const actualPath = '/' + pathParts.slice(2).join('/'); // /some/path
+        let actualPath = '/' + pathParts.slice(2).join('/'); // /some/path
+
+        // [FIX] Normalize Trailing Slashes
+        if (actualPath.length > 1 && actualPath.endsWith('/')) {
+            actualPath = actualPath.slice(0, -1);
+        }
 
         if (!merchantId) {
             return res.status(400).json({ error: "INVALID_SANDBOX_REQUEST", message: "Merchant ID missing from URL" });
@@ -43,6 +48,13 @@ router.all("/:merchantId/*", async (req: Request, res: Response) => {
             const matchesMethod = r.method.toUpperCase() === req.method?.toUpperCase();
             return matchesPath && matchesMethod;
         });
+
+        console.log(`[DEBUG] Sandbox Route Match:
+            > Request Path: ${actualPath}
+            > Request Method: ${req.method}
+            > Merchant Routes: ${merchant.api.routes.map((r: any) => `${r.method} ${r.path}`).join(", ")}
+            > MATCH FOUND: ${!!route}
+        `);
 
         if (!route) {
             // [UX] Helpful error for sandbox testing

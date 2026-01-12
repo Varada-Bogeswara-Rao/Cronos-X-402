@@ -1,9 +1,36 @@
 import axios from "axios";
 import { AgentWallet } from "./AgentWallet";
-import { WalletContext } from "./types";
+import { WalletContext, PaymentRequest as AgentPaymentRequest } from "./types";
 import { AgentError } from "../errors";
 
 const HTTP_TIMEOUT_MS = 180_000;
+
+// Helper for fire-and-forget logging
+async function logDecision(
+  context: WalletContext,
+  agentAddress: string,
+  req: AgentPaymentRequest,
+  decision: "APPROVED" | "BLOCKED",
+  reason?: string,
+  txHash?: string
+) {
+  if (!context.analyticsUrl) return;
+
+  // Non-blocking catch
+  axios.post(`${context.analyticsUrl}/api/analytics/log`, {
+    agentAddress,
+    url: req.facilitatorUrl,
+    merchantId: req.merchantId,
+    amount: req.amount,
+    currency: req.currency,
+    decision,
+    reason,
+    txHash,
+    chainId: context.chainId
+  }).catch(err => {
+    // Silent fail for analytics to not break flow
+  });
+}
 
 export async function x402Request(
   url: string,
@@ -13,6 +40,7 @@ export async function x402Request(
     method?: "GET" | "POST";
     headers?: Record<string, string>;
     body?: any;
+    timeoutMs?: number;
   } = {}
 ) {
   let paymentAttempted = false; // 🛡️ CRITICAL: Prevents the "Drain Loop"
@@ -36,12 +64,12 @@ export async function x402Request(
         "x-merchant-id": context.merchantId || "",
         "x-chain-id": context.chainId.toString(),
       },
-      timeout: HTTP_TIMEOUT_MS,
+      timeout: options.timeoutMs ?? HTTP_TIMEOUT_MS,
       validateStatus: (status) => status === 200 || status === 402,
     });
 
     if (res.status === 200) {
-      return res.data;
+      return { data: res.data, payment: null };
     }
 
     // 2. 402 Flow
@@ -67,7 +95,10 @@ export async function x402Request(
     }
 
     const decision = wallet.shouldPay(paymentRequest, context);
+    const agentAddress = wallet.getAddress();
+
     if (!decision.allow) {
+      logDecision(context, agentAddress, paymentRequest, "BLOCKED", decision.reason);
       throw new Error(`Agent Policy Rejection: ${decision.reason}`);
     }
 
@@ -76,7 +107,10 @@ export async function x402Request(
 
     // Execute on-chain payment
     const paymentProof = await wallet.executePayment(paymentRequest);
-    const agentAddress = wallet.getAddress(); // Sync call verified
+    // agentAddress is already defined above
+
+    // Log APPROVED
+    logDecision(context, agentAddress, paymentRequest, "APPROVED", undefined, paymentProof);
 
     console.log("[x402] Payment successful. Retrying with proof...");
 
@@ -99,7 +133,15 @@ export async function x402Request(
       timeout: HTTP_TIMEOUT_MS,
     });
 
-    return retry.data;
+    return {
+      data: retry.data,
+      payment: {
+        txHash: paymentProof,
+        amount: paymentRequest.amount,
+        currency: paymentRequest.currency,
+        chain: paymentRequest.chainId
+      }
+    };
 
   } catch (err: any) {
     if (err instanceof Error && err.name === "AgentError") {

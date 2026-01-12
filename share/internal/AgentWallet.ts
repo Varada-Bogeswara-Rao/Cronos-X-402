@@ -28,17 +28,12 @@ export class AgentWallet {
     // Reduced limit for testing persistence (0.2 USDC)
     // Reduced limit for testing persistence (0.2 USDC)
     private dailyLimit = 0.5;
+    private maxPerTransaction = 0.5; // Default safe limit
 
     private spentToday = 0.0;
     private lastResetDate = "";
 
-    private allowedMerchants = new Set<string>([
-        "60fa3d1c-8357-496b-a312-fe41c5cd2909",
-        "2bbc88c5-afc3-4f67-93fb-c38df67fa028",
-        "eb16bd95-62b6-4e4d-bad0-c54b372ad822",
-        "ec85b480-0874-4c67-9b21-596d593394b0",
-        "b9805b9e-fa6c-4640-8470-f5b230dee6d4",
-    ]);
+    private allowedMerchants = new Set<string>([]);
 
     private trustedFacilitatorOrigins = new Set<string>([
         "http://localhost:5000",
@@ -62,6 +57,7 @@ export class AgentWallet {
     ) {
         if (config) {
             if (config.dailyLimit !== undefined) this.dailyLimit = config.dailyLimit;
+            if (config.maxPerTransaction !== undefined) this.maxPerTransaction = config.maxPerTransaction;
             if (config.allowedMerchants) this.allowedMerchants = new Set(config.allowedMerchants);
             if (config.trustedFacilitators) this.trustedFacilitatorOrigins = new Set(config.trustedFacilitators);
         }
@@ -259,15 +255,20 @@ export class AgentWallet {
         }
 
         // 3. Merchant allowlist
-        // DISABLED per user request for global compatibility
-        // if (!this.allowedMerchants.has(request.merchantId)) {
-        //     return { allow: false, reason: `Merchant not allowlisted: ${request.merchantId}` };
-        // }
+        // Enabled for safety test
+        if (this.allowedMerchants.size > 0 && !this.allowedMerchants.has(request.merchantId)) {
+            return { allow: false, reason: `Merchant not allowlisted: ${request.merchantId}` };
+        }
 
         // 4. Daily spend limit
         // Floating point fix: Use a small epsilon or round
         if ((this.spentToday + request.amount) > (this.dailyLimit + 0.0001)) {
             return { allow: false, reason: `Daily limit exceeded (${this.spentToday.toFixed(2)} + ${request.amount} > ${this.dailyLimit})` };
+        }
+
+        // 5. Max Per Transaction Check
+        if (request.amount > (this.maxPerTransaction + 0.0001)) {
+            return { allow: false, reason: `Transaction limit exceeded (${request.amount} > ${this.maxPerTransaction})` };
         }
 
 

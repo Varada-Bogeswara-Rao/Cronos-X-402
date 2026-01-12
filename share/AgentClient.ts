@@ -41,6 +41,7 @@ export class AgentClient {
       executor,
       {
         dailyLimit: config.dailyLimit,
+        maxPerTransaction: config.maxPerTransaction,
         trustedFacilitators: config.trustedFacilitators,
         allowedMerchants: config.allowedMerchants,
       }
@@ -50,6 +51,7 @@ export class AgentClient {
     this.context = {
       chainId: config.chainId,
       merchantId: config.merchantId,
+      analyticsUrl: config.analyticsUrl
     };
   }
 
@@ -70,6 +72,19 @@ export class AgentClient {
       body?: any;
     }
   ): Promise<T> {
+    const res = await this.fetchWithDetails<T>(url, options);
+    return res.data;
+  }
+
+  async fetchWithDetails<T>(
+    url: string,
+    options?: {
+      method?: "GET" | "POST";
+      headers?: Record<string, string>;
+      body?: any;
+      timeoutMs?: number;
+    }
+  ): Promise<{ data: T; payment: any }> {
     console.log("[SDK] AgentClient.fetch called");
     console.log(`[SDK] URL: ${url}`);
     console.log(`[SDK] Options:`, options);
