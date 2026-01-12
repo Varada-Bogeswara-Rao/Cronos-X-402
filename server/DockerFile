@@ -14,7 +14,7 @@ RUN npm run build
 # 2. Build Server
 WORKDIR /usr/src/app/server
 # Copy server package files
-COPY server/package*.json ./
+COPY server/package.json ./
 # Install server dependencies (will link to ../payment-middleware)
 RUN npm install
 
