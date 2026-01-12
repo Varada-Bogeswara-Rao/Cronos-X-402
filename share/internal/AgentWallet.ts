@@ -192,7 +192,13 @@ export class AgentWallet {
         // Expecting body structure:
         // { paymentRequest: { chainId, currency, receiver, amount, token ... } }
 
-        const req = body?.paymentRequest;
+        // Support both wrapped { paymentRequest: ... } and raw { ... } structures
+        // Robust strategy: Check if 'paymentRequest' key exists, otherwise assume body IS the request if it has 'amount'
+        let req = body?.paymentRequest || body;
+
+        // Double check deep nesting (some frameworks might wrap twice)
+        if (req?.paymentRequest) req = req.paymentRequest;
+
         if (!req) {
             throw new Error("Missing 'paymentRequest' in response body");
         }

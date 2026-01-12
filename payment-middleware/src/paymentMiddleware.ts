@@ -39,7 +39,11 @@ export function paymentMiddleware(config: PaymentMiddlewareConfig): RequestHandl
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
             const method = req.method.toUpperCase();
-            const cleanPath = req.path.replace(/\/$/, "") || "/";
+
+            // [FIX] Use originalUrl to avoid truncation when mounted
+            const fullPath = req.originalUrl || req.url;
+            const cleanPath = fullPath.split('?')[0].replace(/\/$/, "") || "/";
+
             const cacheKey = `price:${merchantId}:${method}:${cleanPath}`;
             const ttl = cacheTTLms ?? 60_000;
 
@@ -129,7 +133,17 @@ export function paymentMiddleware(config: PaymentMiddlewareConfig): RequestHandl
 
             next();
         } catch (error: any) {
-            // Forward errors to the application's global error handler
+            // [FIX] Catch 402 errors from upstream/gateway and forward them nicely
+            if (error.response?.status === 402) {
+                res.status(402).json({
+                    error: "PAYMENT_REQUIRED",
+                    message: "Payment required (Gateway)",
+                    paymentRequest: error.response.data?.paymentRequest || error.response.data
+                });
+                return;
+            }
+
+            // Forward other errors to the application's global error handler
             next(error);
         }
     };

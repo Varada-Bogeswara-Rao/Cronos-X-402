@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import axios from "axios";
 import Merchant from "../models/Merchant";
 import { paymentMiddleware } from "../middleware/paymentMiddleware";
+import { validateUpstreamUrl } from "../utils/security";
 
 const router = Router();
 
@@ -40,6 +41,16 @@ router.all("/:merchantId/*", async (req: Request, res: Response) => {
         // 1. Fetch Merchant
         const merchant = await Merchant.findOne({ merchantId }).lean();
         if (!merchant) return res.status(404).json({ error: "MERCHANT_NOT_FOUND" });
+
+        // [SECURITY] SSRF Protection
+        const isSafeParams = await validateUpstreamUrl(merchant.api.baseUrl);
+        if (!isSafeParams) {
+            console.error(`[SANDBOX] 🚨 SSRF Blocked for merchant ${merchantId}: ${merchant.api.baseUrl}`);
+            return res.status(403).json({
+                error: "UNSAFE_UPSTREAM",
+                message: "The merchant's upstream URL is invalid or points to a private network."
+            });
+        }
 
         // 2. Identify Route
         // We match against the STRIPPED path

@@ -3,6 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import { ethers } from 'ethers';
 import connectDB from './db';
 
 // Import your routes
@@ -57,6 +59,38 @@ app.use('/api/sandbox', sandboxRouter); // [SECURE] Sandbox namespace
 
 app.get('/', (req: Request, res: Response) => {
   res.json({ status: 'online', service: 'Cronos Merchant Gateway' });
+});
+
+// [OBSERVABILITY] Health Check (P2)
+app.get('/health', async (req: Request, res: Response) => {
+  const status: Record<string, any> = { status: 'healthy', timestamp: new Date() };
+
+  try {
+    // 1. Check DB
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.connection.db?.admin().ping();
+      status.db = 'ok';
+    } else {
+      throw new Error("DB Not Connected");
+    }
+  } catch (e: any) {
+    status.db = 'error';
+    status.dbError = e.message;
+    status.healthy = false;
+  }
+
+  try {
+    // 2. Check RPC
+    const provider = new ethers.JsonRpcProvider(process.env.CRONOS_RPC_URL);
+    await provider.getBlockNumber();
+    status.rpc = 'ok';
+  } catch (e: any) {
+    status.rpc = 'error';
+    status.rpcError = e.message;
+    status.healthy = false;
+  }
+
+  res.status(status.healthy ? 200 : 503).json(status);
 });
 
 // [REMOVED] Background Schedulers
