@@ -1,24 +1,39 @@
 # Step 1: Build Stage
 FROM node:20-alpine AS builder
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
-# Copy package files and install dependencies
-COPY package*.json ./
+# 1. Build Payment Middleware first
+# Copy middleware source
+COPY payment-middleware ./payment-middleware
+WORKDIR /usr/src/app/payment-middleware
+# Install deps and build (creates dist/)
+RUN npm install
+RUN npm run build
+
+# 2. Build Server
+WORKDIR /usr/src/app/server
+# Copy server package files
+COPY server/package*.json ./
+# Install server dependencies (will link to ../payment-middleware)
 RUN npm install
 
-# Copy source and build TypeScript
-COPY . .
+# Copy server source and build
+COPY server/ .
 RUN npm run build
 
 # Step 2: Production Stage
 FROM node:20-alpine
 
-WORKDIR /app
+WORKDIR /usr/src/app/server
 
-# Only copy production-essential files
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/dist ./dist
+# Copy necessary files from builder
+# We need payment-middleware available for the local file dependency reference
+COPY --from=builder /usr/src/app/payment-middleware ../payment-middleware
+COPY --from=builder /usr/src/app/server/package*.json ./
+COPY --from=builder /usr/src/app/server/dist ./dist
+
+# Install only production dependencies
 RUN npm install --omit=dev
 
 # Expose the port your app runs on
