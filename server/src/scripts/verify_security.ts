@@ -1,7 +1,7 @@
 import axios from "axios";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import { paymentMiddleware } from "../../../payment-middleware/dist/paymentMiddleware"; // Import compiled JS + Type defs
+import { paymentMiddleware } from "cronos-merchant-payment-middleware";
 import Merchant from "../models/Merchant";
 import ReplayKey from "../models/ReplayKey";
 

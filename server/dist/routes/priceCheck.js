@@ -44,12 +44,18 @@ router.post("/", async (req, res) => {
             message: "Api has been disabled"
         });
     }
+    // [CACHE INVALIDATION]
+    // Include Last-Modified/ETag equivalent logic so middleware can intelligently invalidate.
+    const priceVersion = merchant.metadata?.updatedAt
+        ? Math.floor(new Date(merchant.metadata.updatedAt).getTime() / 1000)
+        : Math.floor(Date.now() / 1000);
     return res.json({
         merchantId,
         price: route.price,
         currency: route.currency,
         payTo: merchant.wallet.address,
-        network: merchant.wallet.network
+        network: merchant.wallet.network,
+        version: priceVersion
     });
 });
 exports.default = router;

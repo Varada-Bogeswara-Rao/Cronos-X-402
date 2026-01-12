@@ -8,6 +8,8 @@ const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const mongoose_1 = __importDefault(require("mongoose"));
+const ethers_1 = require("ethers");
 const db_1 = __importDefault(require("./db"));
 // Import your routes
 const merchantRoutes_1 = __importDefault(require("./routes/merchantRoutes"));
@@ -45,14 +47,43 @@ const transactions_1 = __importDefault(require("./routes/transactions"));
 // [NEW] Dashboard Analytics & Data - MUST BE BEFORE GATEWAY CATCH-ALL
 app.use('/api/analytics', analytics_1.default);
 app.use('/api/transactions', transactions_1.default);
-// [REMOVED] Yield Intelligence Ops
-// [REMOVED] Yield Sources
 app.use('/api/merchants', merchantRoutes_1.default);
 app.use('/api/price-check', priceCheck_1.default);
 app.use('/api/facilitator', verifyPayment_1.default);
-app.use('/api/sandbox', sandbox_1.default); // [SECURE] Sandbox Namespace
+app.use('/api/sandbox', sandbox_1.default); // [SECURE] Sandbox namespace
 app.get('/', (req, res) => {
     res.json({ status: 'online', service: 'Cronos Merchant Gateway' });
+});
+// [OBSERVABILITY] Health Check (P2)
+app.get('/health', async (req, res) => {
+    const status = { status: 'healthy', timestamp: new Date() };
+    try {
+        // 1. Check DB
+        if (mongoose_1.default.connection.readyState === 1) {
+            await mongoose_1.default.connection.db?.admin().ping();
+            status.db = 'ok';
+        }
+        else {
+            throw new Error("DB Not Connected");
+        }
+    }
+    catch (e) {
+        status.db = 'error';
+        status.dbError = e.message;
+        status.healthy = false;
+    }
+    try {
+        // 2. Check RPC
+        const provider = new ethers_1.ethers.JsonRpcProvider(process.env.CRONOS_RPC_URL);
+        await provider.getBlockNumber();
+        status.rpc = 'ok';
+    }
+    catch (e) {
+        status.rpc = 'error';
+        status.rpcError = e.message;
+        status.healthy = false;
+    }
+    res.status(status.healthy ? 200 : 503).json(status);
 });
 // [REMOVED] Background Schedulers
 // 5. Global Error Handler

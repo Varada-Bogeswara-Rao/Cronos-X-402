@@ -5,9 +5,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const ethers_1 = require("ethers");
+const crypto_1 = __importDefault(require("crypto"));
+const zod_1 = require("zod");
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const Merchant_1 = __importDefault(require("../models/Merchant"));
+const ReplayKey_1 = __importDefault(require("../models/ReplayKey"));
+const MerchantStats_1 = __importDefault(require("../models/MerchantStats"));
+const rpcRetry_1 = require("../utils/rpcRetry");
+const logger_1 = __importDefault(require("../utils/logger"));
 const router = (0, express_1.Router)();
+const VerifySchema = zod_1.z.object({
+    paymentProof: zod_1.z.string().length(66).startsWith('0x'),
+    expectedAmount: zod_1.z.string().regex(/^\d+(\.\d+)?$/),
+    currency: zod_1.z.enum(['USDC', 'CRO', 'TCRO']),
+    path: zod_1.z.string().startsWith('/'),
+    method: zod_1.z.enum(['GET', 'POST', 'PUT', 'DELETE']),
+    nonce: zod_1.z.string().min(6).optional()
+});
 const CONFIRMATIONS_REQUIRED = process.env.NODE_ENV === "production" ? 3 : 1;
 const getProvider = () => {
     return new ethers_1.ethers.JsonRpcProvider(process.env.CRONOS_RPC_URL || "https://evm-t3.cronos.org", undefined, { staticNetwork: true });
@@ -17,69 +31,105 @@ const canonicalPath = (path) => path.replace(/\/$/, "") || "/";
 router.post("/verify", async (req, res) => {
     try {
         const merchantId = req.headers["x-merchant-id"];
-        const { paymentProof, expectedAmount, currency, path, method } = req.body;
-        if (!merchantId || !paymentProof || !expectedAmount || !currency || !path || !method) {
-            return res.status(400).json({
-                error: "INVALID_REQUEST",
-                message: "Missing required verification fields"
-            });
+        // [VALIDATION] Zod Schema Check (P2)
+        const parseResult = VerifySchema.safeParse({
+            ...req.body,
+            nonce: req.headers['x-nonce'] || req.body.nonce
+        });
+        if (!parseResult.success) {
+            return res.status(400).json({ error: "VALIDATION_FAILED", details: parseResult.error.issues });
+        }
+        const { paymentProof, expectedAmount, currency, path, method } = parseResult.data;
+        if (!merchantId) {
+            return res.status(400).json({ error: "MISSING_MERCHANT_ID" });
         }
         const cleanPath = canonicalPath(path);
         const cleanMethod = method.toUpperCase();
-        console.log("[FACILITATOR] verify request", {
+        logger_1.default.info({
             merchantId,
             cleanMethod,
             cleanPath,
             currency,
             expectedAmount
-        });
+        }, "[FACILITATOR] Verify Request");
         // --------------------------------------------------
-        // 1. Replay Protection
+        // 1. Replay Protection (P0 Critical)
         // --------------------------------------------------
-        const existingTx = await Transaction_1.default.findOne({ txHash: paymentProof }).lean();
-        if (existingTx) {
+        const nonce = req.headers["x-nonce"] || req.body.nonce;
+        if (!nonce)
+            return res.status(400).json({ error: "MISSING_NONCE" });
+        // Deterministic Key: merchantId + method + path + nonce
+        const keyString = `${merchantId}:${cleanMethod}:${cleanPath}:${nonce}`;
+        const keyHash = crypto_1.default.createHash('sha256').update(keyString).digest('hex');
+        try {
+            await ReplayKey_1.default.create({ keyHash, txHash: paymentProof });
+        }
+        catch (e) {
+            if (e.code === 11000) {
+                return res.status(402).json({
+                    verified: false,
+                    error: "REPLAY_DETECTED",
+                    message: "Nonce already used for this route"
+                });
+            }
+            throw e;
+        }
+        // Also check if txHash was used for a DIFFERENT purpose (Basic Double Spend)
+        const globalTxReuse = await Transaction_1.default.exists({ txHash: paymentProof });
+        if (globalTxReuse) {
             return res.status(402).json({
                 verified: false,
-                error: "REPLAY_DETECTED"
+                error: "TX_REUSED",
+                message: "Transaction hash already processed"
             });
         }
         // --------------------------------------------------
         // 2. Fetch Merchant
         // --------------------------------------------------
         const merchant = await Merchant_1.default.findOne({ merchantId }).lean();
-        if (!merchant || !merchant.status?.active) {
+        if (!merchant)
+            return res.status(404).json({ error: "MERCHANT_NOT_FOUND" });
+        if (!merchant.status?.active) {
             return res.status(403).json({
-                error: "MERCHANT_INACTIVE"
+                error: "MERCHANT_SUSPENDED",
+                message: "This merchant account is not active."
             });
         }
         // --------------------------------------------------
-        // 3. 🔥 ROUTE REGISTRATION CHECK (MISSING EARLIER)
+        // 3. 🔥 ROUTE REGISTRATION CHECK
         // --------------------------------------------------
         const route = merchant.api?.routes?.find((r) => r.method === cleanMethod &&
             canonicalPath(r.path) === cleanPath);
         if (!route) {
-            console.error("[FACILITATOR] ROUTE_NOT_REGISTERED", {
-                cleanMethod,
-                cleanPath,
-                registeredRoutes: merchant.api?.routes
-            });
-            return res.status(402).json({
+            console.error("[FACILITATOR] ROUTE_NOT_REGISTERED", { cleanMethod, cleanPath });
+            return res.status(404).json({
                 error: "ROUTE_NOT_REGISTERED",
                 message: "This path is not monetized by the merchant."
+            });
+        }
+        if (route.active === false) {
+            return res.status(410).json({
+                error: "ROUTE_DISABLED",
+                message: "This premium route has been disabled."
             });
         }
         // --------------------------------------------------
         // 4. Chain Verification
         // --------------------------------------------------
+        // --------------------------------------------------
+        // 4. Chain Verification (P1 Reliability)
+        // --------------------------------------------------
         const provider = getProvider();
-        const receipt = await provider.getTransactionReceipt(paymentProof);
-        if (!receipt || receipt.status !== 1) {
+        // [RELIABILITY] Retry RPC calls
+        const receipt = await (0, rpcRetry_1.withRpcRetry)(() => provider.getTransactionReceipt(paymentProof));
+        // Ethers v6 status can be number or null. Check specifically for success (1).
+        if (!receipt || Number(receipt.status) !== 1) {
             return res.status(402).json({
                 verified: false,
                 error: "TX_NOT_FOUND_OR_FAILED"
             });
         }
-        const tx = await provider.getTransaction(paymentProof);
+        const tx = await (0, rpcRetry_1.withRpcRetry)(() => provider.getTransaction(paymentProof));
         if (!tx || !tx.from) {
             return res.status(402).json({
                 verified: false,
@@ -147,6 +197,11 @@ router.post("/verify", async (req, res) => {
         // --------------------------------------------------
         // 7. Persist Transaction
         // --------------------------------------------------
+        // --------------------------------------------------
+        // 7. Persist Transaction & Analytics
+        // --------------------------------------------------
+        // Payer MUST be derived from chain (tx.from or log), never headers.
+        // We already have `payer` variable derived from `tx.from` above.
         await Transaction_1.default.create({
             txHash: paymentProof,
             merchantId,
@@ -156,15 +211,24 @@ router.post("/verify", async (req, res) => {
             path: cleanPath,
             method: cleanMethod
         });
+        // [PERFORMANCE] Incremental Analytics (P1)
+        await MerchantStats_1.default.updateOne({ merchantId }, {
+            $inc: {
+                [`totalRevenue.${currency}`]: Number(expectedAmount),
+                totalRequests: 1
+            },
+            $set: { lastActive: new Date() }
+        }, { upsert: true });
         return res.status(200).json({
             verified: true,
             txHash: paymentProof,
             payer,
-            confirmations
+            confirmations,
+            // [OPTIONAL] Return receipt ID if needed
         });
     }
     catch (error) {
-        console.error("[FACILITATOR_CRITICAL_ERROR]", error);
+        logger_1.default.error({ err: error.message, stack: error.stack }, "[FACILITATOR_CRITICAL_ERROR]");
         return res.status(500).json({
             error: "FACILITATOR_FAULT",
             message: "Blockchain verification failed"
