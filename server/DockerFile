@@ -14,13 +14,14 @@ RUN npm install && npm run build && npm pack
 WORKDIR /usr/src/app/server
 # Copy server package files
 COPY server/package.json ./
+
+# Copy server source and build
+COPY server/ .
+
 # Install server dependencies (will link to ../payment-middleware initially)
 RUN npm install
 # OVERRIDE with packed tarball to ensure valid files in container
 RUN npm install ../payment-middleware/*.tgz
-
-# Copy server source and build
-COPY server/ .
 RUN npm run build
 
 # Step 2: Production Stage
