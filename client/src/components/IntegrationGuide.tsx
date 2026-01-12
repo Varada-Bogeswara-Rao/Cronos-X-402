@@ -154,8 +154,8 @@ app.use(paymentMiddleware({
                                 🚀
                             </div>
                             <div>
-                                <span className="block font-semibold text-white">SDK Mode</span>
-                                <span className="text-gray-500">Production enforcement running directly inside your own infrastructure.</span>
+                                <span className="block font-semibold text-white">SDK Mode (Recommended)</span>
+                                <span className="text-gray-500">Use the middleware package for production. SDK is recommended for AI agents.</span>
                             </div>
                         </div>
                     </div>

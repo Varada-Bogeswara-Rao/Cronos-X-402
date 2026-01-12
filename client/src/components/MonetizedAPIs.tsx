@@ -68,13 +68,18 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
     // Helper: Generate Auth Headers
     const getAuthHeaders = async () => {
         const timestamp = Date.now().toString();
-        const message = `Update Routes for Merchant ${merchantId} at ${timestamp}`;
+        const expiresAt = (Date.now() + 60_000).toString(); // 60s window
+        const nonce = crypto.randomUUID();
+        // Updated message format with expiry
+        const message = `Update Routes:${merchantId}:${timestamp}:${expiresAt}:${nonce}`;
 
         try {
             const signature = await signMessageAsync({ message });
             return {
                 'x-signature': signature,
                 'x-timestamp': timestamp,
+                'x-expires-at': expiresAt,
+                'x-nonce': nonce,
                 'x-merchant-id': merchantId
             };
         } catch (error) {
@@ -82,6 +87,8 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
             throw new Error("User denied signature");
         }
     };
+
+    // ... later in the file ...
 
     // Fetch Routes
     const fetchRoutes = async () => {
@@ -255,7 +262,7 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
                                         <div className="flex items-center justify-end gap-2 transition-opacity">
                                             <button
                                                 onClick={() => {
-                                                    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+                                                    const baseUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:5000";
                                                     const cleanPath = route.path.startsWith('/') ? route.path : `/${route.path}`;
                                                     const sandboxUrl = `${baseUrl}/api/sandbox/${merchantId}${cleanPath}`;
                                                     window.open(sandboxUrl, '_blank');

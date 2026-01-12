@@ -1,17 +1,67 @@
-// AgentWallet.ts
-import * as fs from "fs";
-import * as path from "path";
 import { PaymentRequest, WalletContext, AgentWalletConfig } from "./types";
 import { PaymentExecutor } from "./executors";
+import * as crypto from "crypto";
 
-const STATE_FILE = path.resolve(__dirname, "wallet-state.json");
+// Isomorphic Persistence Helper
+interface PersistenceLayer {
+    load(): any | null;
+    save(data: any): void;
+}
+
+class NodePersistence implements PersistenceLayer {
+    private fs: any;
+    private path: any;
+    private statePath: string = "";
+
+    constructor() {
+        // Dynamic require to avoid bundling issues in browser
+        try {
+            this.fs = require("fs");
+            this.path = require("path");
+            this.statePath = this.path.resolve(__dirname, "wallet-state.json");
+        } catch (e) { /* Browser environment */ }
+    }
+
+    load() {
+        if (!this.fs || !this.fs.existsSync(this.statePath)) return null;
+        try {
+            return JSON.parse(this.fs.readFileSync(this.statePath, "utf-8"));
+        } catch (e) {
+            console.warn("[WALLET] Failed to load local state file", e);
+            return null;
+        }
+    }
+
+    save(data: any) {
+        if (!this.fs) return;
+        try {
+            const tmpPath = this.statePath + ".tmp";
+            this.fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2));
+            this.fs.renameSync(tmpPath, this.statePath);
+        } catch (e) {
+            console.error("[WALLET] Failed to save local state file", e);
+        }
+    }
+}
+
+class BrowserPersistence implements PersistenceLayer {
+    private key = "cronos_agent_wallet_state";
+    load() {
+        if (typeof localStorage === "undefined") return null;
+        const item = localStorage.getItem(this.key);
+        return item ? JSON.parse(item) : null;
+    }
+    save(data: any) {
+        if (typeof localStorage === "undefined") return;
+        localStorage.setItem(this.key, JSON.stringify(data));
+    }
+}
 
 interface WalletState {
     lastResetDate: string;
     spentToday: number;
     paidRequests: [string, number][]; // Serialize Map as entries
 }
-
 
 /**
  * AgentWallet
@@ -20,13 +70,12 @@ interface WalletState {
  * - Decides whether to pay
  * - Delegates execution to PaymentExecutor
  * - Enforces security + policy
- * - [NEW] Persists state to local JSON
+ * - Persists state (Isomorphic: FS or LocalStorage)
  */
 export class AgentWallet {
     // ---------------- CONFIG ----------------
 
-    // Reduced limit for testing persistence (0.2 USDC)
-    // Reduced limit for testing persistence (0.2 USDC)
+    // Reduced limit for testing persistence (0.5 USDC)
     private dailyLimit = 0.5;
     private maxPerTransaction = 0.5; // Default safe limit
 
@@ -43,6 +92,7 @@ export class AgentWallet {
     ]);
 
     private stopped = false;
+    private persistence: PersistenceLayer;
 
     /**
      * Replay protection
@@ -61,6 +111,14 @@ export class AgentWallet {
             if (config.allowedMerchants) this.allowedMerchants = new Set(config.allowedMerchants);
             if (config.trustedFacilitators) this.trustedFacilitatorOrigins = new Set(config.trustedFacilitators);
         }
+
+        // Initialize Persistence based on env
+        if (typeof window === "undefined") {
+            this.persistence = new NodePersistence();
+        } else {
+            this.persistence = new BrowserPersistence();
+        }
+
         this.loadState();
     }
 
@@ -71,56 +129,47 @@ export class AgentWallet {
     }
 
     private loadState() {
-        try {
-            if (fs.existsSync(STATE_FILE)) {
-                const raw = fs.readFileSync(STATE_FILE, "utf-8");
-                const state: WalletState = JSON.parse(raw);
+        const state = this.persistence.load() as WalletState;
 
-                // 1. Check if we need to reset for a new day
-                const today = this.getTodayDate();
-                if (state.lastResetDate !== today) {
-                    console.log(`[WALLET] New day detected! Resetting limit. (Last: ${state.lastResetDate}, Today: ${today})`);
-                    this.spentToday = 0;
-                    this.lastResetDate = today;
+        if (state) {
+            // 1. Check if we need to reset for a new day
+            const today = this.getTodayDate();
+            if (state.lastResetDate !== today) {
+                console.log(`[WALLET] New day detected! Resetting limit. (Last: ${state.lastResetDate}, Today: ${today})`);
+                this.spentToday = 0;
+                this.lastResetDate = today;
 
-                    // Cleanup old requests (older than 24h) to prevent memory leak
-                    const MAX_AGE_MS = 24 * 60 * 60 * 1000;
-                    const now = Date.now();
-                    this.paidRequests = new Map(
-                        state.paidRequests.filter(([_, ts]) => now - ts < MAX_AGE_MS)
-                    );
-                } else {
-                    console.log(`[WALLET] State loaded. Spent today: ${state.spentToday} / ${this.dailyLimit}`);
-                    this.spentToday = state.spentToday;
-                    this.lastResetDate = state.lastResetDate;
-
-                    // Also cleanup on every load to be safe
-                    const MAX_AGE_MS = 24 * 60 * 60 * 1000;
-                    const now = Date.now();
-                    this.paidRequests = new Map(
-                        state.paidRequests.filter(([_, ts]) => now - ts < MAX_AGE_MS)
-                    );
-                }
+                // Cleanup old requests (older than 24h) to prevent memory leak
+                const MAX_AGE_MS = 24 * 60 * 60 * 1000;
+                const now = Date.now();
+                this.paidRequests = new Map(
+                    state.paidRequests.filter(([_, ts]) => now - ts < MAX_AGE_MS)
+                );
             } else {
-                // Initialize fresh
-                this.lastResetDate = this.getTodayDate();
+                console.log(`[WALLET] State loaded. Spent today: ${state.spentToday.toFixed(4)} / ${this.dailyLimit}`);
+                this.spentToday = state.spentToday;
+                this.lastResetDate = state.lastResetDate;
+
+                // Also cleanup on every load to be safe
+                const MAX_AGE_MS = 24 * 60 * 60 * 1000;
+                const now = Date.now();
+                this.paidRequests = new Map(
+                    state.paidRequests.filter(([_, ts]) => now - ts < MAX_AGE_MS)
+                );
             }
-        } catch (err) {
-            console.error("[WALLET] Failed to load state:", err);
+        } else {
+            // Initialize fresh
+            this.lastResetDate = this.getTodayDate();
         }
     }
 
     private saveState() {
-        try {
-            const state: WalletState = {
-                lastResetDate: this.lastResetDate,
-                spentToday: this.spentToday,
-                paidRequests: Array.from(this.paidRequests.entries())
-            };
-            fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
-        } catch (err) {
-            console.error("[WALLET] Failed to save state:", err);
-        }
+        const state: WalletState = {
+            lastResetDate: this.lastResetDate,
+            spentToday: this.spentToday,
+            paidRequests: Array.from(this.paidRequests.entries())
+        };
+        this.persistence.save(state);
     }
 
     // ---------------- PUBLIC ----------------
@@ -206,11 +255,18 @@ export class AgentWallet {
         const amount = req.amount;
         const currency = req.currency;
         const payTo = req.receiver;
-        const merchantId = defaultMerchantId; // Body usually doesn't repeat merchantId
-        const facilitatorUrl = requestUrl; // Use the actual URL we called
+        // Body usually doesn't repeat merchantId
+        const merchantId = defaultMerchantId;
+        const facilitatorUrl = requestUrl;
         const chainId = req.chainId;
-        const route = "premium"; // Default or extract
-        const nonce = Date.now().toString(); // Fallback if backend doesn't provide unique nonce
+        const route = "premium";
+
+        // [SECURITY] NONCE AUTHORITY
+        // Server MUST provide nonce. No fallbacks allowed.
+        const nonce = req.nonce;
+        if (!nonce) {
+            throw new Error("Missing 'nonce' in 402 body - Server is the sole nonce authority.");
+        }
 
         if (!amount || !currency || !payTo || !chainId) {
             throw new Error(`Incomplete 402 body: ${JSON.stringify(req)}`);
@@ -237,11 +293,18 @@ export class AgentWallet {
 
     public shouldPay(
         request: PaymentRequest,
-        context: WalletContext
+        context: WalletContext,
+        originalChallenge?: { route?: string }
     ): { allow: boolean; reason?: string } {
         // -1. Emergency Stop
         if (this.stopped) {
             return { allow: false, reason: "Emergency stop active" };
+        }
+
+        // [SECURITY] Spoofing Check
+        // Ensure the route we are paying for matches the invalid route (if known)
+        if (originalChallenge?.route && request.route !== originalChallenge.route) {
+            return { allow: false, reason: `Route mismatch: Challenge=${request.route}, Expected=${originalChallenge.route}` };
         }
 
         // 0. Currency check [NEW]

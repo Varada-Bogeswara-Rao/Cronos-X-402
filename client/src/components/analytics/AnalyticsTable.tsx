@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns"; // Standard relative time
-import { Loader2, ShieldAlert, CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Search, AlertCircle, ArrowUpRight, Loader2, ShieldAlert, CheckCircle } from "lucide-react";
+import { CRONOS_EXPLORER } from "@/lib/explorer";
 import { api } from "@/lib/api";
 
 type PaymentLog = {
@@ -97,12 +98,12 @@ export default function AnalyticsTable({ agentAddress }: { agentAddress: string 
                                     ) : (
                                         log.txHash ? (
                                             <a
-                                                href={`https://explorer.cronos.org/testnet/tx/${log.txHash}`}
+                                                href={`${CRONOS_EXPLORER}/tx/${log.txHash}`}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="text-blue-400 hover:text-blue-300 underline text-xs"
+                                                className="text-blue-400 font-mono hover:text-blue-300 transition-colors"
                                             >
-                                                View Tx
+                                                {log.txHash.slice(0, 6)}...{log.txHash.slice(-4)}
                                             </a>
                                         ) : "—"
                                     )}

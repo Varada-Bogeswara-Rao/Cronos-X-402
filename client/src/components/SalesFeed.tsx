@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUpRight, Receipt } from "lucide-react";
+import { CRONOS_EXPLORER } from "@/lib/explorer";
 
 interface Sale {
     txHash: string;
@@ -21,20 +22,21 @@ export default function SalesFeed({ sales }: { sales: Sale[] }) {
                 {sales.length === 0 ? (
                     <p className="p-8 text-center text-zinc-500">No sales yet. Waiting for AI Agents...</p>
                 ) : (
-                    sales.map((tx) => (
-                        <div key={tx.txHash} className="p-4 flex justify-between items-center hover:bg-zinc-800/50 transition">
+                    sales.map((sale) => (
+                        <div key={sale.txHash} className="p-4 flex justify-between items-center hover:bg-zinc-800/50 transition">
                             <div>
-                                <p className="text-sm font-mono text-zinc-300">{tx.txHash.slice(0, 10)}...</p>
-                                <p className="text-xs text-zinc-500">{new Date(tx.createdAt).toLocaleString()}</p>
+                                <p className="text-sm font-mono text-zinc-300">{sale.txHash.slice(0, 10)}...</p>
+                                <p className="text-xs text-zinc-500">{new Date(sale.createdAt).toLocaleString()}</p>
                             </div>
                             <div className="text-right">
-                                <p className="text-emerald-400 font-bold">+{tx.amount} {tx.currency}</p>
+                                <p className="text-emerald-400 font-bold">+{sale.amount} {sale.currency}</p>
                                 <a
-                                    href={`https://explorer.cronos.org/testnet/tx/${tx.txHash}`}
+                                    href={`${CRONOS_EXPLORER}/tx/${sale.txHash}`}
                                     target="_blank"
-                                    className="text-[10px] text-zinc-500 hover:text-orange-400 flex items-center gap-1"
+                                    rel="noreferrer"
+                                    className="text-xs text-blue-400 hover:underline"
                                 >
-                                    Verify <ArrowUpRight size={10} />
+                                    View TX
                                 </a>
                             </div>
                         </div>

@@ -41,6 +41,7 @@ export async function x402Request(
     headers?: Record<string, string>;
     body?: any;
     timeoutMs?: number;
+    allowBodyFallback?: boolean;
   } = {}
 ) {
   let paymentAttempted = false; // 🛡️ CRITICAL: Prevents the "Drain Loop"
@@ -86,6 +87,11 @@ export async function x402Request(
     try {
       paymentRequest = wallet.parse402Header(res.headers);
     } catch (headerErr) {
+      // [SECURITY] Explicit Opt-In for Body Fallback
+      if (!options.allowBodyFallback) {
+        throw new Error("402 Header Parsing Failed and allowBodyFallback is disabled. Server must provide X-Payment headers.");
+      }
+
       console.warn("[SDK] parsing headers failed, trying body...", headerErr);
       try {
         paymentRequest = wallet.parse402Body(res.data, context.merchantId || "unknown", url);
@@ -94,7 +100,9 @@ export async function x402Request(
       }
     }
 
-    const decision = wallet.shouldPay(paymentRequest, context);
+    const decision = wallet.shouldPay(paymentRequest, context, {
+      route: wallet.parse402Header(res.headers).route // Validate against what the server claimed in headers
+    });
     const agentAddress = wallet.getAddress();
 
     if (!decision.allow) {
@@ -102,57 +110,71 @@ export async function x402Request(
       throw new Error(`Agent Policy Rejection: ${decision.reason}`);
     }
 
-    // Mark as attempted BEFORE the async call to be safe
+    // Mark as attempted BEFORE the async call
     paymentAttempted = true;
 
-    // Execute on-chain payment
-    const paymentProof = await wallet.executePayment(paymentRequest);
-    // agentAddress is already defined above
+    // 3. Execute Payment (Authorized)
+    console.log(`[x402] Payment Approved. Executing on Chain ${context.chainId}...`);
+    let txHash: string;
 
-    // Log APPROVED
-    logDecision(context, agentAddress, paymentRequest, "APPROVED", undefined, paymentProof);
+    try {
+      txHash = await wallet.executePayment(paymentRequest);
+    } catch (execErr: any) {
+      logDecision(context, agentAddress, paymentRequest, "BLOCKED", `Execution Failed: ${execErr.message}`);
+      throw execErr;
+    }
 
-    console.log("[x402] Payment successful. Retrying with proof...");
+    logDecision(context, agentAddress, paymentRequest, "APPROVED", "Paid", txHash);
 
-    // 3. Retry with Proof and Contextual Headers
+    // 4. Retry Request with Payment Proof
+    console.log(`[x402] Payment Successful (${txHash}). Retrying request...`);
+
+    // [SECURITY] Protocol Alignment
+    // Must send: x-payment-proof (txHash) AND x-nonce (to verify binding)
     const retryHeaders = {
       ...effectiveHeaders,
-      "x-merchant-id": context.merchantId || "",
-      "x-payment-proof": paymentProof,
-      "x-payment-payer": agentAddress,
-      "x-payment-nonce": paymentRequest.nonce,
-      "x-payment-route": paymentRequest.route,
+      "X-Merchant-ID": context.merchantId || "",
+      "X-Chain-ID": context.chainId.toString(),
+      "X-Payment-Proof": txHash, // Canonical
+      "X-Nonce": paymentRequest.nonce // Canonical
     };
-    console.log("[SDK] Retry Headers:", JSON.stringify(retryHeaders, null, 2));
 
-    const retry = await axios({
+    const retryRes = await axios({
       url,
       method: method ?? "GET",
-      data: body,
+      data: {
+        ...(body || {}), // Preserve original body
+        nonce: paymentRequest.nonce // [CRITICAL] Send nonce in body for ReplayKey
+      },
       headers: retryHeaders,
-      timeout: HTTP_TIMEOUT_MS,
+      timeout: options.timeoutMs ?? HTTP_TIMEOUT_MS,
     });
 
     return {
-      data: retry.data,
+      data: retryRes.data,
       payment: {
-        txHash: paymentProof,
+        txHash,
         amount: paymentRequest.amount,
         currency: paymentRequest.currency,
-        chain: paymentRequest.chainId
+        chainId: paymentRequest.chainId // Normalized property name
       }
     };
 
-  } catch (err: any) {
-    if (err instanceof Error && err.name === "AgentError") {
-      throw err; // Already wrapped
+  } catch (error: any) {
+    // Enhanced error logging
+    if (error.response?.status === 402) {
+      // This happens if the proof was rejected (REPLAY_DETECTED, etc)
+      console.error("[SDK] Payment Proof Rejected by Server:", error.response.data);
+      throw new Error(`Use Access Denied: ${error.response.data.error || "UNKNOWN"} - ${error.response.data.message || "Proof rejected"}`);
     }
+    // Continue to standard error handling
+    if (error.name === "AgentError") throw error; // Already wrapped
 
-    const status = err.response?.status;
-    const errorData = err.response?.data || err.message;
+    const status = error.response?.status;
+    const errorData = error.response?.data || error.message;
 
     // Log minimal info, let the caller handle the details
-    console.warn(`[x402] Request Failed: ${status || "Network"} - ${err.message}`);
+    console.warn(`[x402] Request Failed: ${status || "Network"} - ${error.message}`);
 
     throw new AgentError(
       `Request failed with status code ${status || "unknown"}: ${JSON.stringify(errorData)}`,

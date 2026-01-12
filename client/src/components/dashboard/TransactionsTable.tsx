@@ -1,5 +1,7 @@
 "use client";
 
+import { CheckCircle2, XCircle, Clock } from "lucide-react";
+import { CRONOS_EXPLORER } from "@/lib/explorer";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
@@ -98,12 +100,14 @@ export default function TransactionsTable({ merchantId }: { merchantId: string }
                                         {Number(tx.amount).toFixed(2)} <span className="text-xs text-gray-500">{tx.currency}</span>
                                     </td>
                                     <td className="py-4 px-4">
-                                        <button
-                                            onClick={() => openExplorer(tx.txHash)}
-                                            className="text-blue-400 hover:text-blue-300 hover:underline font-mono text-xs truncate max-w-[120px] block"
+                                        <a
+                                            href={`${CRONOS_EXPLORER}/tx/${tx.txHash}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="text-blue-400 hover:underline"
                                         >
-                                            {tx.txHash}
-                                        </button>
+                                            {tx.txHash.slice(0, 6)}...{tx.txHash.slice(-4)}
+                                        </a>
                                     </td>
                                     <td className="py-4 px-4 text-right">
                                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">

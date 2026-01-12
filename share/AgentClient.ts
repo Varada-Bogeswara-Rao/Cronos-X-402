@@ -70,6 +70,7 @@ export class AgentClient {
       method?: "GET" | "POST";
       headers?: Record<string, string>;
       body?: any;
+      allowBodyFallback?: boolean;
     }
   ): Promise<T> {
     const res = await this.fetchWithDetails<T>(url, options);
@@ -83,6 +84,7 @@ export class AgentClient {
       headers?: Record<string, string>;
       body?: any;
       timeoutMs?: number;
+      allowBodyFallback?: boolean;
     }
   ): Promise<{ data: T; payment: any }> {
     console.log("[SDK] AgentClient.fetch called");

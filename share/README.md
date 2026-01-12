@@ -1,6 +1,12 @@
 # Cronos Merchant SDK
 
-A robust, multi-chain agent client that enables your AI Agents to pay for APIs autonomously. 
+The official SDK for building AI agents that can pay for resources on the Cronos blockchain using the x402 protocol.
+
+## 🛡️ Security Features (v1.1.1)
+- **Zero Trust Payer:** Derives identity strictly from chain data.
+- **Strong Replay Protection:** Enforces cryptographic binding of `merchantId + route + nonce`.
+- **Anti-Spoofing:** Validates payment challenges against requested routes before paying.
+- **Fail-Safe:** Supports "Fail Closed" mode for maximum security.
 
 Key features:
 *   **Automatic 402 Payments**: Handles "Payment Required" challenges seamlessly.
@@ -78,6 +84,7 @@ Pass the expected response type `<T>` for TypeScript autocomplete.
 *   `method`: "GET" | "POST"
 *   `headers`: Dictionary of headers.
 *   `body`: JSON object or string.
+*   `allowBodyFallback`: `boolean`. Defaults to `false`. Set to `true` to allow parsing 402 details from the response body if headers are missing. DANGEROUS: Only use with trusted facilitators.
 
 ### `AgentError`
 
@@ -89,6 +96,25 @@ Thrown when a request fails or is blocked by policy.
     *   `INSUFFICIENT_FUNDS`: Not enough USDC/Gas.
     *   `HTTP_ERROR`: Server returned an error (details in `err.details`).
 *   `err.details`: The raw response body from the server.
+
+## 🤝 Integration with AI Frameworks
+
+The SDK includes a built-in adapter for LangChain-compatible frameworks (like Cronos AI SDK).
+
+```typescript
+import { AgentClient, createPaymentTool } from "@cronos/agent-wallet";
+
+// 1. Setup Wallet
+const wallet = new AgentClient({ ...config });
+
+// 2. Create Tool
+const paymentTool = createPaymentTool(wallet);
+
+// 3. Register with your Agent
+myAgent.registerTool(paymentTool);
+```
+
+The tool is named `pay_for_resource`. It allows your LLM to autonomously decide when to pay for premium content.
 
 ## License
 
