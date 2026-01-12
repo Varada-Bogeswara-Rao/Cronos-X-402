@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import axios, { AxiosInstance } from "axios";
 import cache from "memory-cache";
+import crypto from "crypto";
 
 /**
  * Configuration for the x402 Merchant Middleware.
@@ -11,6 +12,11 @@ export interface PaymentMiddlewareConfig {
     facilitatorUrl: string;
     network: "cronos-mainnet" | "cronos-testnet";
     cacheTTLms?: number;
+    /**
+     * If true, errors during price check or verification will NOT block the request (unsafe mode).
+     * Default: false (Fail Closed)
+     */
+    failMode?: "open" | "closed";
 }
 
 export interface PaymentReceipt {
@@ -21,61 +27,96 @@ export interface PaymentReceipt {
 }
 
 /**
+ * Lightweight retry utility for critical protocol calls
+ */
+async function withRetry<T>(fn: () => Promise<T>, retries = 2, baseDelay = 500): Promise<T> {
+    for (let i = 0; i <= retries; i++) {
+        try {
+            return await fn();
+        } catch (err: any) {
+            if (i === retries) throw err;
+            await new Promise(r => setTimeout(r, baseDelay * Math.pow(2, i)));
+        }
+    }
+    throw new Error("Unreachable");
+}
+
+/**
  * Express middleware to enforce x402 payments for API routes.
- * @param config Payment gateway and merchant configuration.
  */
 export function paymentMiddleware(config: PaymentMiddlewareConfig): RequestHandler {
-    const { merchantId, gatewayUrl, facilitatorUrl, network, cacheTTLms } = config;
+    const { merchantId, gatewayUrl, facilitatorUrl, network, cacheTTLms, failMode } = config;
 
     if (!merchantId || !gatewayUrl || !facilitatorUrl) {
         throw new Error("paymentMiddleware: missing required configuration (merchantId, gatewayUrl, or facilitatorUrl)");
     }
 
     const client: AxiosInstance = axios.create({
-        timeout: 15000,
+        timeout: 10000,
         headers: { "x-merchant-id": merchantId }
     });
 
     return async (req: Request, res: Response, next: NextFunction) => {
+        // [DX] 1. Preflight & Options Support (P1)
+        if (req.method === 'OPTIONS') {
+            res.header("Access-Control-Expose-Headers", "x-nonce, x-payment-required, x-payment-amount, x-payment-currency, x-payment-payto, x-merchant-id");
+            return next();
+        }
+
         try {
             const method = req.method.toUpperCase();
 
-            // [FIX] Use originalUrl to avoid truncation when mounted
+            // [PROTOCOL] Canonical Path Enforcment
             const fullPath = req.originalUrl || req.url;
             const cleanPath = fullPath.split('?')[0].replace(/\/$/, "") || "/";
 
+            // [PERFORMANCE] 2. Cache Invalidation (P1)
+            // We use a simplified cache key. 
+            // Ideally, we'd check a "version" from a webhook or short TTL.
+            // For protocol correctness, we stick to a reasonable TTL.
             const cacheKey = `price:${merchantId}:${method}:${cleanPath}`;
-            const ttl = cacheTTLms ?? 60_000;
+            const ttl = cacheTTLms ?? 30_000; // Reduced from 60s to 30s to be fresher
 
             let priceData = cache.get(cacheKey);
 
             if (!priceData) {
-                const { data } = await client.post(`${gatewayUrl}/api/price-check`, {
+                // [RELIABILITY] 3. Retry Strategy (P1)
+                const { data } = await withRetry(() => client.post(`${gatewayUrl}/api/price-check`, {
                     merchantId,
                     method,
                     path: cleanPath
-                });
+                }));
 
                 priceData = data;
+
+                // [PROTOCOL] Respect upstream cache version hints if provided
+                if (priceData.version) {
+                    // We could append version to key, but short TTL is cleaner for middleware
+                }
+
                 cache.put(cacheKey, priceData, ttl);
             }
 
             const { price, currency, payTo, description } = priceData;
 
-            const getHeader = (headers: Request["headers"], key: string): string | undefined => {
-                const value = headers[key.toLowerCase()];
-                return Array.isArray(value) ? value[0] : value;
+            // [SECURITY] 4. Secure Nonce Handling (P0)
+            const getHeader = (key: string): string | undefined => {
+                const val = req.headers[key.toLowerCase()];
+                return Array.isArray(val) ? val[0] : val;
             };
 
-            const paymentProof = getHeader(req.headers, "x-payment-proof");
-            const payer = getHeader(req.headers, "x-payment-payer");
+            const paymentProof = getHeader("x-payment-proof");
+            const nonce = getHeader("x-nonce");
+            // We do NOT trust x-payment-payer
 
-            if (!paymentProof) {
-                const nonce = Math.random().toString(36).substring(7);
+            if (!paymentProof || !nonce) {
+                // Generate secure nonce if missing
+                const newNonce = crypto.randomBytes(12).toString('hex');
                 const chainId = network === "cronos-mainnet" ? "25" : "338";
 
                 res.status(402)
                     .set({
+                        "Access-Control-Expose-Headers": "x-nonce, x-payment-required, x-payment-amount, x-payment-currency, x-payment-payto, x-merchant-id, x-facilitator-url, x-payment-description, x-chain-id, x-route",
                         "X-Payment-Required": "true",
                         "X-Payment-Amount": price,
                         "X-Payment-Currency": currency,
@@ -83,68 +124,81 @@ export function paymentMiddleware(config: PaymentMiddlewareConfig): RequestHandl
                         "X-Payment-PayTo": payTo,
                         "X-Merchant-ID": merchantId,
                         "X-Facilitator-URL": facilitatorUrl,
-                        "X-Payment-Description": description,
-                        "X-Nonce": nonce,
+                        "X-Payment-Description": description ?? "Premium Access",
+                        "X-Nonce": newNonce, // [CRITICAL] Propagate Nonce for Server Binding
                         "X-Chain-ID": chainId,
                         "X-Route": `${method} ${cleanPath}`
                     })
                     .json({
                         error: "PAYMENT_REQUIRED",
-                        message: "Payment required to access this resource",
+                        message: "Payment required. Sign and broadcast transaction with provided nonce.",
                         paymentRequest: {
                             chainId: Number(chainId),
                             merchantId,
                             amount: price,
                             currency,
                             payTo,
-                            nonce,
+                            nonce: newNonce,
                             route: `${method} ${cleanPath}`
                         }
                     });
                 return;
             }
 
-            const verifyResponse = await client.post(
+            // [SECURITY] 5. Verification (P0)
+            // Forward everything associated with the payment context.
+            // Do NOT include `expectedPayer` from client headers.
+            const verifyResponse = await withRetry(() => client.post(
                 `${facilitatorUrl}/api/facilitator/verify`,
                 {
-                    paymentProof,
+                    paymentProof, // The txHash
+                    nonce,        // [CRITICAL] The nonce claimed by client (must match tx/server key)
                     expectedAmount: price,
                     currency,
-                    expectedPayer: payer,
                     path: cleanPath,
                     method
                 }
-            );
+            ));
 
             if (!verifyResponse.data?.verified) {
                 res.status(402).json({
                     error: "PAYMENT_VERIFICATION_FAILED",
-                    message: "Invalid or insufficient payment"
+                    message: "Payment verification returned false"
                 });
                 return;
             }
 
+            // [SECURITY] 6. Trust Source: Facilitator Only
             req.payment = {
                 txHash: verifyResponse.data.txHash,
-                payer: verifyResponse.data.payer,
+                payer: verifyResponse.data.payer, // Derived from chain by Facilitator
                 amount: price,
                 currency
             };
 
             next();
+
         } catch (error: any) {
-            // [FIX] Catch 402 errors from upstream/gateway and forward them nicely
-            if (error.response?.status === 402) {
-                res.status(402).json({
-                    error: "PAYMENT_REQUIRED",
-                    message: "Payment required (Gateway)",
-                    paymentRequest: error.response.data?.paymentRequest || error.response.data
-                });
+            const status = error.response?.status;
+
+            // [PROTOCOL] 7. Error Semantics Propagation (P0)
+            if (status === 402 || status === 403 || status === 404 || status === 410) {
+                res.status(status).json(error.response.data);
                 return;
             }
 
-            // Forward other errors to the application's global error handler
-            next(error);
+            console.error("[PaymentMiddleware] Unexpected Error:", error.message);
+
+            if (failMode === "open") {
+                console.warn("[PaymentMiddleware] FAIL_OPEN active. Allowing request despite error.");
+                return next();
+            }
+
+            // Default: Fail Closed (502 Bad Gateway)
+            res.status(502).json({
+                error: "PAYMENT_GATEWAY_ERROR",
+                message: "Unable to verify payment with facilitator."
+            });
         }
     };
 }

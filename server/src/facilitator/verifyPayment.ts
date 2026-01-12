@@ -14,7 +14,7 @@ const router = Router();
 const VerifySchema = z.object({
     paymentProof: z.string().length(66).startsWith('0x'),
     expectedAmount: z.string().regex(/^\d+(\.\d+)?$/),
-    currency: z.enum(['USDC', 'CRO']),
+    currency: z.enum(['USDC', 'CRO', 'TCRO']),
     path: z.string().startsWith('/'),
     method: z.enum(['GET', 'POST', 'PUT', 'DELETE']),
     nonce: z.string().min(6).optional()
@@ -40,14 +40,13 @@ router.post("/verify", async (req: Request, res: Response) => {
         const merchantId = req.headers["x-merchant-id"] as string;
 
         // [VALIDATION] Zod Schema Check (P2)
-        let validatedBody;
-        try {
-            validatedBody = VerifySchema.parse({ ...req.body, nonce: req.headers['x-nonce'] || req.body.nonce });
-        } catch (e) {
-            if (e instanceof z.ZodError) {
-                return res.status(400).json({ error: "VALIDATION_FAILED", details: e.errors });
-            }
-            throw e;
+        const parseResult = VerifySchema.safeParse({
+            ...req.body,
+            nonce: req.headers['x-nonce'] || req.body.nonce
+        });
+
+        if (!parseResult.success) {
+            return res.status(400).json({ error: "VALIDATION_FAILED", details: parseResult.error.issues });
         }
 
         const {
@@ -56,7 +55,7 @@ router.post("/verify", async (req: Request, res: Response) => {
             currency,
             path,
             method
-        } = validatedBody;
+        } = parseResult.data;
 
         if (!merchantId) {
             return res.status(400).json({ error: "MISSING_MERCHANT_ID" });
@@ -154,7 +153,8 @@ router.post("/verify", async (req: Request, res: Response) => {
         // [RELIABILITY] Retry RPC calls
         const receipt = await withRpcRetry(() => provider.getTransactionReceipt(paymentProof));
 
-        if (!receipt || receipt.status !== 1) {
+        // Ethers v6 status can be number or null. Check specifically for success (1).
+        if (!receipt || Number(receipt.status) !== 1) {
             return res.status(402).json({
                 verified: false,
                 error: "TX_NOT_FOUND_OR_FAILED"
