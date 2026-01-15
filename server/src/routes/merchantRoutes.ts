@@ -217,8 +217,8 @@ router.post("/:merchantId/routes", verifyWalletSignature, async (req: Request, r
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
-        if (currency !== 'USDC') {
-            return res.status(400).json({ message: 'Only USDC is supported at this time' });
+        if (!['USDC', 'CRO'].includes(currency)) {
+            return res.status(400).json({ message: 'Only USDC and CRO are supported at this time' });
         }
 
         const cleanPath = canonicalizePath(path);

@@ -100,7 +100,7 @@ export async function x402Request(
       }
     }
 
-    const decision = wallet.shouldPay(paymentRequest, context, {
+    const decision = await wallet.shouldPay(paymentRequest, context, {
       route: wallet.parse402Header(res.headers).route // Validate against what the server claimed in headers
     });
     const agentAddress = wallet.getAddress();

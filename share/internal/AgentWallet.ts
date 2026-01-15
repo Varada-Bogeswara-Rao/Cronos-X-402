@@ -1,66 +1,12 @@
 import { PaymentRequest, WalletContext, AgentWalletConfig } from "./types";
 import { PaymentExecutor } from "./executors";
-import * as crypto from "crypto";
-
-// Isomorphic Persistence Helper
-interface PersistenceLayer {
-    load(): any | null;
-    save(data: any): void;
-}
-
-class NodePersistence implements PersistenceLayer {
-    private fs: any;
-    private path: any;
-    private statePath: string = "";
-
-    constructor() {
-        // Dynamic require to avoid bundling issues in browser
-        try {
-            this.fs = require("fs");
-            this.path = require("path");
-            this.statePath = this.path.resolve(__dirname, "wallet-state.json");
-        } catch (e) { /* Browser environment */ }
-    }
-
-    load() {
-        if (!this.fs || !this.fs.existsSync(this.statePath)) return null;
-        try {
-            return JSON.parse(this.fs.readFileSync(this.statePath, "utf-8"));
-        } catch (e) {
-            console.warn("[WALLET] Failed to load local state file", e);
-            return null;
-        }
-    }
-
-    save(data: any) {
-        if (!this.fs) return;
-        try {
-            const tmpPath = this.statePath + ".tmp";
-            this.fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2));
-            this.fs.renameSync(tmpPath, this.statePath);
-        } catch (e) {
-            console.error("[WALLET] Failed to save local state file", e);
-        }
-    }
-}
-
-class BrowserPersistence implements PersistenceLayer {
-    private key = "cronos_agent_wallet_state";
-    load() {
-        if (typeof localStorage === "undefined") return null;
-        const item = localStorage.getItem(this.key);
-        return item ? JSON.parse(item) : null;
-    }
-    save(data: any) {
-        if (typeof localStorage === "undefined") return;
-        localStorage.setItem(this.key, JSON.stringify(data));
-    }
-}
+import mongoose from "mongoose";
+import { AgentWalletModel } from "./models";
 
 interface WalletState {
     lastResetDate: string;
     spentToday: number;
-    paidRequests: [string, number][]; // Serialize Map as entries
+    paidRequests: Map<string, number>;
 }
 
 /**
@@ -70,7 +16,7 @@ interface WalletState {
  * - Decides whether to pay
  * - Delegates execution to PaymentExecutor
  * - Enforces security + policy
- * - Persists state (Isomorphic: FS or LocalStorage)
+ * - Persists state to MongoDB
  */
 export class AgentWallet {
     // ---------------- CONFIG ----------------
@@ -92,7 +38,7 @@ export class AgentWallet {
     ]);
 
     private stopped = false;
-    private persistence: PersistenceLayer;
+    private isInitialized = false;
 
     /**
      * Replay protection
@@ -111,15 +57,7 @@ export class AgentWallet {
             if (config.allowedMerchants) this.allowedMerchants = new Set(config.allowedMerchants);
             if (config.trustedFacilitators) this.trustedFacilitatorOrigins = new Set(config.trustedFacilitators);
         }
-
-        // Initialize Persistence based on env
-        if (typeof window === "undefined") {
-            this.persistence = new NodePersistence();
-        } else {
-            this.persistence = new BrowserPersistence();
-        }
-
-        this.loadState();
+        this.lastResetDate = this.getTodayDate();
     }
 
     // ---------------- PERSISTENCE ----------------
@@ -128,48 +66,97 @@ export class AgentWallet {
         return new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     }
 
-    private loadState() {
-        const state = this.persistence.load() as WalletState;
+    public async init() {
+        if (this.isInitialized) return;
 
-        if (state) {
-            // 1. Check if we need to reset for a new day
-            const today = this.getTodayDate();
-            if (state.lastResetDate !== today) {
-                console.log(`[WALLET] New day detected! Resetting limit. (Last: ${state.lastResetDate}, Today: ${today})`);
-                this.spentToday = 0;
-                this.lastResetDate = today;
-
-                // Cleanup old requests (older than 24h) to prevent memory leak
-                const MAX_AGE_MS = 24 * 60 * 60 * 1000;
-                const now = Date.now();
-                this.paidRequests = new Map(
-                    state.paidRequests.filter(([_, ts]) => now - ts < MAX_AGE_MS)
-                );
-            } else {
-                console.log(`[WALLET] State loaded. Spent today: ${state.spentToday.toFixed(4)} / ${this.dailyLimit}`);
-                this.spentToday = state.spentToday;
-                this.lastResetDate = state.lastResetDate;
-
-                // Also cleanup on every load to be safe
-                const MAX_AGE_MS = 24 * 60 * 60 * 1000;
-                const now = Date.now();
-                this.paidRequests = new Map(
-                    state.paidRequests.filter(([_, ts]) => now - ts < MAX_AGE_MS)
-                );
+        try {
+            // Auto-connect if not connected
+            if (mongoose.connection.readyState === 0) {
+                if (!process.env.MONGODB_URI) {
+                    console.warn("[WALLET] MONGODB_URI missing. Persistence disabled.");
+                    return;
+                }
+                await mongoose.connect(process.env.MONGODB_URI);
+                console.log("[WALLET] Connected to MongoDB");
             }
-        } else {
-            // Initialize fresh
-            this.lastResetDate = this.getTodayDate();
+
+            await this.loadState();
+            this.isInitialized = true;
+        } catch (error) {
+            console.error("[WALLET] Initialization failed:", error);
         }
     }
 
-    private saveState() {
-        const state: WalletState = {
-            lastResetDate: this.lastResetDate,
-            spentToday: this.spentToday,
-            paidRequests: Array.from(this.paidRequests.entries())
-        };
-        this.persistence.save(state);
+    private async loadState() {
+        try {
+            const doc = await AgentWalletModel.findOne({ address: this.address }).lean();
+
+            if (doc) {
+                // Helper to normalize DB Map vs POJO
+                const rawObj = doc.paidRequests || {};
+                const rawMap = rawObj instanceof Map
+                    ? rawObj as Map<string, any>
+                    : new Map(Object.entries(rawObj));
+
+                // 1. Check if we need to reset for a new day
+                const today = this.getTodayDate();
+                if (doc.lastResetDate !== today) {
+                    console.log(`[WALLET] New day detected! Resetting limit. (Last: ${doc.lastResetDate}, Today: ${today})`);
+                    this.spentToday = 0;
+                    this.lastResetDate = today;
+
+                    // Cleanup old requests (older than 24h)
+                    const MAX_AGE_MS = 24 * 60 * 60 * 1000;
+                    const now = Date.now();
+
+                    this.paidRequests = new Map();
+                    for (const [key, val] of rawMap.entries()) {
+                        const ts = Number(val);
+                        if (!isNaN(ts) && (now - ts < MAX_AGE_MS)) {
+                            this.paidRequests.set(key, ts);
+                        }
+                    }
+
+                    // Save cleanup immediately
+                    await this.saveState();
+                } else {
+                    console.log(`[WALLET] State loaded. Spent today: ${doc.spentToday.toFixed(4)} / ${this.dailyLimit}`);
+                    this.spentToday = doc.spentToday;
+                    this.lastResetDate = doc.lastResetDate;
+
+                    this.paidRequests = new Map();
+                    for (const [key, val] of rawMap.entries()) {
+                        const ts = Number(val);
+                        if (!isNaN(ts)) {
+                            this.paidRequests.set(key, ts);
+                        }
+                    }
+                }
+            } else {
+                // Initialize fresh
+                this.lastResetDate = this.getTodayDate();
+                await this.saveState();
+            }
+        } catch (error) {
+            console.warn("[WALLET] Failed to load state from DB", error);
+        }
+    }
+
+    private async saveState() {
+        try {
+            await AgentWalletModel.findOneAndUpdate(
+                { address: this.address },
+                {
+                    address: this.address,
+                    lastResetDate: this.lastResetDate,
+                    spentToday: this.spentToday,
+                    paidRequests: this.paidRequests
+                },
+                { upsert: true, new: true }
+            );
+        } catch (error) {
+            console.error("[WALLET] Failed to save state to DB", error);
+        }
     }
 
     // ---------------- PUBLIC ----------------
@@ -291,11 +278,14 @@ export class AgentWallet {
         console.warn("[WALLET] Emergency stop activated!");
     }
 
-    public shouldPay(
+    public async shouldPay(
         request: PaymentRequest,
         context: WalletContext,
         originalChallenge?: { route?: string }
-    ): { allow: boolean; reason?: string } {
+    ): Promise<{ allow: boolean; reason?: string }> {
+        // Ensure initialized
+        if (!this.isInitialized) await this.init();
+
         // -1. Emergency Stop
         if (this.stopped) {
             return { allow: false, reason: "Emergency stop active" };
@@ -307,8 +297,8 @@ export class AgentWallet {
             return { allow: false, reason: `Route mismatch: Challenge=${request.route}, Expected=${originalChallenge.route}` };
         }
 
-        // 0. Currency check [NEW]
-        if (request.currency !== "USDC") {
+        // 0. Currency check [UPDATED]
+        if (request.currency !== "USDC" && request.currency !== "CRO") {
             return { allow: false, reason: `Unsupported currency: ${request.currency}` };
         }
 
@@ -340,14 +330,15 @@ export class AgentWallet {
             return { allow: false, reason: `Transaction limit exceeded (${request.amount} > ${this.maxPerTransaction})` };
         }
 
-
-
         return { allow: true };
     }
 
     // ---------------- PAYMENT EXECUTION ----------------
 
     public async executePayment(request: PaymentRequest): Promise<string> {
+        // Ensure initialized
+        if (!this.isInitialized) await this.init();
+
         const key = this.paymentKey(request);
 
         if (this.paidRequests.has(key)) {
@@ -362,7 +353,7 @@ export class AgentWallet {
         this.paidRequests.set(key, Date.now());
 
         // Persist immediately
-        this.saveState();
+        await this.saveState();
 
         return proof;
     }

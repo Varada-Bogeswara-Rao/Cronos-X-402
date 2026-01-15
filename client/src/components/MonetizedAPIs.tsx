@@ -70,8 +70,8 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
         const timestamp = Date.now().toString();
         const expiresAt = (Date.now() + 60_000).toString(); // 60s window
         const nonce = crypto.randomUUID();
-        // Updated message format with expiry
-        const message = `Update Routes:${merchantId}:${timestamp}:${expiresAt}:${nonce}`;
+        // Match Server's Expected Format: "Update Routes for Merchant <id> at <timestamp>"
+        const message = `Update Routes for Merchant ${merchantId} at ${timestamp}`;
 
         try {
             const signature = await signMessageAsync({ message });
@@ -262,7 +262,8 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
                                         <div className="flex items-center justify-end gap-2 transition-opacity">
                                             <button
                                                 onClick={() => {
-                                                    const baseUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:5000";
+
+                                                    const baseUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
                                                     const cleanPath = route.path.startsWith('/') ? route.path : `/${route.path}`;
                                                     const sandboxUrl = `${baseUrl}/api/sandbox/${merchantId}${cleanPath}`;
                                                     window.open(sandboxUrl, '_blank');
@@ -378,15 +379,14 @@ export default function MonetizedAPIs({ merchantId }: MonetizedAPIsProps) {
                                             <Select
                                                 value={field.value}
                                                 onValueChange={field.onChange}
-                                                disabled
+                                                disabled={!!editingRoute}
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue>
-                                                        {field.value === "USDC" ? "USDC (Polygon/Cronos)" : field.value}
-                                                    </SelectValue>
+                                                    <SelectValue placeholder="Select Currency" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="USDC">USDC (Polygon/Cronos)</SelectItem>
+                                                    <SelectItem value="CRO">CRO (Native Gas Token)</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         )}

@@ -70,40 +70,65 @@ export class CronosUsdcExecutor implements PaymentExecutor {
     }
 
     async execute(request: PaymentRequest): Promise<string> {
-        const amount = ethers.parseUnits(
-            request.amount.toString(),
-            6 // USDC decimals
-        );
-
-        console.log(
-            `[CRONOS] Paying ${request.amount} USDC -> ${request.payTo}
-merchant = ${request.merchantId}
-route = ${request.route}
-nonce = ${request.nonce} `
-        );
-
         // 0. Connection Check
         if (!this.chainId) await this.verifyChain(Number(request.chainId));
 
+        console.log(
+            `[CRONOS] Paying ${request.amount} ${request.currency} -> ${request.payTo}
+merchant = ${request.merchantId}
+route = ${request.route}
+nonce = ${request.nonce}`
+        );
+
+        // --- PATH A: Native CRO Payment ---
+        if (request.currency === "CRO" || request.currency === "TCRO") {
+            const amount = ethers.parseEther(request.amount.toString());
+
+            // 1. Balance Check
+            const balance = await this.withRetry(() => this.provider.getBalance(this.wallet.address));
+            const MIN_GAS = ethers.parseEther("0.05"); // Reserve gas
+            if (balance < (amount + MIN_GAS)) {
+                throw new Error(
+                    `Insufficient CRO balance: have ${ethers.formatEther(balance)}, need ${request.amount} + gas`
+                );
+            }
+
+            // 2. Send Tx
+            const txHandler = await this.withRetry(() => this.wallet.sendTransaction({
+                to: request.payTo,
+                value: amount
+            }));
+
+            console.log(`[CRONOS] CRO Tx sent: ${txHandler.hash}. Waiting for confirmation...`);
+
+            // 3. Wait
+            const receipt = await Promise.race([
+                this.withRetry(() => txHandler.wait(CONFIRMATIONS)),
+                new Promise<null>((_, reject) =>
+                    setTimeout(() => reject(new Error("Transaction confirmation timeout")), TX_TIMEOUT_MS)
+                ),
+            ]) as ethers.TransactionReceipt | null;
+
+            if (!receipt || receipt.status !== 1) throw new Error("CRO transfer failed");
+
+            console.log(`[CRONOS] Payment confirmed: ${receipt.hash}`);
+            return receipt.hash;
+        }
+
+        // --- PATH B: USDC Payment (Legacy) ---
+        const amount = ethers.parseUnits(request.amount.toString(), 6); // USDC decimals
+
         // 1. Balance check (Retryable)
-        // Note: balanceOf returns bigint in v6
         const balance = await this.withRetry(() => this.usdc.balanceOf(this.wallet.address));
         if (balance < amount) {
             throw new Error(
-                `Insufficient USDC balance: have ${ethers.formatUnits(
-                    balance,
-                    6
-                )
-                }, need ${request.amount} `
+                `Insufficient USDC balance: have ${ethers.formatUnits(balance, 6)}, need ${request.amount}`
             );
         }
 
-
-
-        // ... inside class ...
         // 1.5 Gas Check (CRO Balance)
         const croBalance = await this.withRetry(() => this.provider.getBalance(this.wallet.address));
-        const MIN_GAS = ethers.parseEther("0.1"); // Reserve 0.1 CRO for gas
+        const MIN_GAS = ethers.parseEther("0.1");
         if (croBalance < MIN_GAS) {
             throw new AgentError(
                 `Insufficient CRO for gas: have ${ethers.formatEther(croBalance)}, need > 0.1`,
@@ -111,27 +136,16 @@ nonce = ${request.nonce} `
             );
         }
 
-        // 2. Gas Estimation (Safety)
-        try {
-            const gasEstimate = await this.withRetry(() => this.usdc.transfer.estimateGas(request.payTo, amount));
-            // Optional: Cap gas limit if needed, usually estimate is fine
-        } catch (e: any) {
-            throw new Error(`Gas estimation failed(likely insufficient funds for gas): ${e.message} `);
-        }
-
-        // 3. Send tx
+        // 2. Send tx
         const tx = await this.withRetry(() => this.usdc.transfer(request.payTo, amount));
 
         console.log(`[CRONOS] Tx sent: ${tx.hash}. Waiting for confirmation...`);
 
-        // 4. Wait with timeout + confirmations
+        // 3. Wait
         const receipt = await Promise.race([
             this.withRetry(() => tx.wait(CONFIRMATIONS)),
             new Promise<null>((_, reject) =>
-                setTimeout(
-                    () => reject(new Error("Transaction confirmation timeout")),
-                    TX_TIMEOUT_MS
-                )
+                setTimeout(() => reject(new Error("Transaction confirmation timeout")), TX_TIMEOUT_MS)
             ),
         ]) as ethers.TransactionReceipt | null;
 
@@ -139,7 +153,7 @@ nonce = ${request.nonce} `
             throw new Error("USDC transfer failed (Reverted)");
         }
 
-        console.log(`[CRONOS] Payment confirmed: ${receipt.hash} `);
+        console.log(`[CRONOS] Payment confirmed: ${receipt.hash}`);
 
         return receipt.hash;
     }
