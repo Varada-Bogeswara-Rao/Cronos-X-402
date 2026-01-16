@@ -19,6 +19,7 @@ COPY server/package.json ./
 COPY server/ .
 
 # Install server dependencies
+RUN rm -f package-lock.json
 RUN npm install
 RUN npm run build
 
