@@ -49,32 +49,45 @@ npm install @cronos-merchant/sdk ethers
 ## Quick Start
 
 ```typescript
-import { AgentClient, AgentError } from "@cronos-merchant/sdk";
+import { AgentClient, AgentAdmin, AgentError } from "@cronos-merchant/sdk";
 
-// 1. Initialize
-const agent = new AgentClient({
-  privateKey: process.env.AGENT_KEY,
-  rpcUrl: "https://evm-t3.cronos.org", // Cronos Testnet
+// Configuration
+const CONFIG = {
+  key: process.env.AGENT_KEY,
+  rpc: "https://evm-t3.cronos.org",
   chainId: 338,
-  usdcAddress: "0xc01..." // Your payment token
-});
+  usdc: "0xc01...",
+  limits: { daily: 10, perTx: 1 }
+};
 
 async function main() {
   try {
-    // 2. Fetch paid resources (just like axios/fetch)
-    const response = await agent.fetch<{ answer: string }>("http://localhost:3000/premium", {
+    // 1. [Setup] Seal Policy On-Chain (Run once or on change)
+    await AgentAdmin.setPolicy({ privateKey: CONFIG.key }, {
+        dailyLimit: CONFIG.limits.daily,
+        maxPerTransaction: CONFIG.limits.perTx
+    });
+
+    // 2. [Runtime] Initialize Agent
+    const agent = new AgentClient({
+      privateKey: CONFIG.key,
+      rpcUrl: CONFIG.rpc,
+      chainId: CONFIG.chainId,
+      usdcAddress: CONFIG.usdc,
+      dailyLimit: CONFIG.limits.daily,       // Must match setPolicy
+      maxPerTransaction: CONFIG.limits.perTx // Must match setPolicy
+    });
+
+    // 3. [Usage] Fetch paid resources
+    const response = await agent.fetch("http://localhost:3000/premium", {
         method: "POST",
         body: { prompt: "Hello World" }
     });
     
-    console.log("Success:", response.answer);
+    console.log("Success:", response);
 
   } catch (err: any) {
-    // 3. Handle Errors
-    if (err instanceof AgentError) {
-        console.error(`Status: ${err.status}`); // 402, 500
-        console.error(`Code: ${err.code}`);     // POLICY_REJECTED, NETWORK_ERROR
-    }
+    if (err instanceof AgentError) console.error(`Error ${err.code}: ${err.message}`);
   }
 }
 ```
@@ -89,7 +102,8 @@ async function main() {
 | `rpcUrl` | `string` | Yes | RPC Endpoint (e.g., Cronos Testnet). |
 | `chainId` | `number` | Yes | Chain ID (e.g., 338). Sent to backend for negotiation. |
 | `usdcAddress` | `string` | Yes | ERC20 Token Address used for payment. |
-| `dailyLimit` | `number` | No | Max USDC allowed to spend per 24h. Default: 1.0 |
+| `dailyLimit` | `number` | No | Max USDC allowed to spend per 24h. Default: 1.0. |
+| `maxPerTransaction` | `number` | No | Max USDC allowed per single transaction. Default: 0.5. |
 | `strictPolicy` | `boolean` | No | If `true`, Agent crashes if local config hash != on-chain hash. Default: `true`. |
 | `anchors` | `object` | No | On-chain registry addresses. Auto-filled for Cronos Testnet. |
 | `analyticsUrl` | `string` | No | URL for centralized logging of payment decisions (e.g. `https://api.myapp.com/analytics`). |
@@ -97,24 +111,42 @@ async function main() {
 | `trustedFacilitators` | `string[]` | No | List of Gateway URLs to trust (e.g., localhost). |
 
 ## 🛡️ Security Workflow (Strict Mode)
-	
-When `strictPolicy` is `true` (default), you must register your configuration hash on-chain whenever you change limits.
-	
-1.  **Define Limits**: Set `dailyLimit` in your code.
-2.  **Seal Policy**: Use the Admin helper to write the hash to the chain.
-	
+
+When `strictPolicy` is `true` (default), the Agent **verifies on-chain authority** before starting. This ensures that no one (including a compromised local server) can tamper with spending limits.
+
+**Step 1. Define Limits in Code**
+You must set your desired limits in your `AgentClient` (or environment variables).
+
+```typescript
+const agent = new AgentClient({
+  ...
+  dailyLimit: 10,
+  maxPerTransaction: 1, // Optional, defaults to 0.5
+  ...
+});
+```
+
+**Step 2. Seal Policy On-Chain**
+Use the `AgentAdmin` tool to write these exact limits to the blockchain. This generates a cryptographic hash.
+
 ```typescript
 import { AgentAdmin } from "@cronos-merchant/sdk";
 
+// Run this ONCE (or whenever you change limits)
 await AgentAdmin.setPolicy({
-  privateKey: process.env.AGENT_KEY
+  privateKey: process.env.ADMIN_KEY
 }, {
-  dailyLimit: 0.5,
-  maxPerTransaction: 0.5
+  dailyLimit: 10,      // MUST MATCH AgentClient config
+  maxPerTransaction: 1 // MUST MATCH AgentClient config
 });
 ```
-	
-3.  **Run Agent**: The Agent checks `Local Limit == On-Chain Limit` before spending.
+
+**Step 3. Run Agent**
+When the Agent starts:
+1.  Calculates hash of local `dailyLimit` + `maxPerTransaction`.
+2.  Fetches the hash from the On-Chain Registry.
+3.  **Matches?** -> Runs.
+4.  **Mismatch?** -> Crashes (FAIL-SAFE).
 
 ## API Reference
 

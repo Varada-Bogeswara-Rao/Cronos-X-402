@@ -217,17 +217,26 @@ export class AgentWallet {
 
             // Note: We check if on-chain hash is set (non-zero) before enforcing
             if (onChain.policyHash !== ethers.ZeroHash && onChain.policyHash !== localHash) {
-                const msg = `Policy Hash Mismatch! Local: ${localHash}, Chain: ${onChain.policyHash}`;
+                const msg = `[SECURITY] Policy Mismatch! Your local config (dailyLimit/maxPerTx) differs from the on-chain policy. \n` +
+                    `   -> Local Hash: ${localHash}\n` +
+                    `   -> Chain Hash: ${onChain.policyHash}\n` +
+                    `   -> Tip: Ensure your 'AgentClient' config matches what you deployed via 'set_policy'.`;
+
                 if (this.config?.strictPolicy) {
                     throw new Error(msg);
                 } else {
-                    console.warn(`[AgentWallet] WARN: ${msg}. Running in PERMISSIVE mode.`);
+                    console.warn(`[AgentWallet] WARN: ${msg}\n   -> Running in PERMISSIVE mode.`);
                 }
             } else {
                 console.log("[AgentWallet] ✅ Policy verified on-chain.");
             }
         } catch (error: any) {
-            console.error("[AgentWallet] Anchor check failed:", error.message);
+            // Only log here if we are NOT throwing (i.e. unexpected errors), or if permissive.
+            // If strict, the caller (constructor) will catch and log/exit, so we avoid double logs.
+            if (!this.config?.strictPolicy) {
+                console.error("[AgentWallet] Anchor check failed:", error.message);
+            }
+            // Propagate if strict
             if (this.config?.strictPolicy) throw error;
         }
     }
