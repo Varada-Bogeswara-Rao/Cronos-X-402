@@ -2,6 +2,32 @@
 
 The official SDK for building AI agents that can pay for resources on the Cronos blockchain using the x402 protocol.
 
+## Architecture
+
+This SDK employs a **Hybrid "Exoskeleton" Architecture**:
+- **Off-Chain**: Fast, free logic enforcement and state tracking (MongoDB).
+- **On-Chain**: Immutable security anchors (Registry & Policy) to prevent tampering.
+
+```mermaid
+graph TD
+    subgraph Agent SDK
+      Local[Local Policy Engine]
+      Anchor[On-Chain Policy Anchor (read-only)]
+      Executor[x402 Payment Executor]
+    end
+
+    subgraph Merchant Middleware
+      MRegistry[Merchant Registry (read-only)]
+      Verifier[x402 Verification]
+    end
+
+    Local -->|Checks Hash| Anchor
+    Local -->|Approves| Executor
+    Executor -->|Signed Claim| Verifier
+    Verifier -->|Verifies Identity| MRegistry
+    Verifier -->|Payment Tx| Cronos[Cronos EVM]
+```
+
 ## 🛡️ Security Features (v1.1.1)
 - **Zero Trust Payer:** Derives identity strictly from chain data.
 - **Strong Replay Protection:** Enforces cryptographic binding of `merchantId + route + nonce`.

@@ -161,4 +161,12 @@ nonce = ${request.nonce}`
     public getAddress(): string {
         return this.wallet.address;
     }
+
+    public getProvider(): ethers.JsonRpcProvider {
+        return this.provider;
+    }
+
+    public getSigner(): ethers.Wallet {
+        return this.wallet;
+    }
 }

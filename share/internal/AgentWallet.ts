@@ -1,5 +1,17 @@
 import { PaymentRequest, WalletContext, AgentWalletConfig } from "./types";
 import { PaymentExecutor } from "./executors";
+import { AgentConfig } from "../config";
+import { PolicyRegistryAdapter } from "./PolicyRegistryAdapter";
+import { ethers } from "ethers";
+
+// Helper to hash policy config
+function hashPolicy(config: AgentConfig): string {
+    const policyData = {
+        dailyLimit: config.dailyLimit || 0,
+        maxPerTransaction: config.maxPerTransaction || 0
+    };
+    return ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(policyData)));
+}
 import mongoose from "mongoose";
 import { AgentWalletModel } from "./models";
 
@@ -44,18 +56,43 @@ export class AgentWallet {
      * Replay protection
      * key -> timestamp
      */
+    /**
+     * Replay protection
+     * key -> timestamp
+     */
     private paidRequests = new Map<string, number>();
+
+    // On-Chain Adapter
+    private policyRegistry?: PolicyRegistryAdapter;
 
     constructor(
         private readonly address: string,
         private readonly executor: PaymentExecutor,
-        config?: AgentWalletConfig
+        private readonly provider: ethers.Provider,
+        private readonly wallet: ethers.Wallet,
+        private readonly config: AgentConfig
     ) {
         if (config) {
             if (config.dailyLimit !== undefined) this.dailyLimit = config.dailyLimit;
             if (config.maxPerTransaction !== undefined) this.maxPerTransaction = config.maxPerTransaction;
             if (config.allowedMerchants) this.allowedMerchants = new Set(config.allowedMerchants);
             if (config.trustedFacilitators) this.trustedFacilitatorOrigins = new Set(config.trustedFacilitators);
+
+            // Initialize On-Chain Adapter if configured
+            if (config.anchors?.agentPolicyRegistry) {
+                this.policyRegistry = new PolicyRegistryAdapter(
+                    config.anchors.agentPolicyRegistry,
+                    provider,
+                    wallet
+                );
+                // Non-blocking check for setup/warning
+                this.verifyPolicyAnchor().catch(err => {
+                    console.error("[AgentWallet] Policy Anchor Warning:", err.message);
+                    if (config.strictPolicy) {
+                        process.exit(1); // Strict mode: fail fast
+                    }
+                });
+            }
         }
         this.lastResetDate = this.getTodayDate();
     }
@@ -156,6 +193,42 @@ export class AgentWallet {
             );
         } catch (error) {
             console.error("[WALLET] Failed to save state to DB", error);
+        }
+    }
+
+    /**
+     * Checks if the local policy matches the on-chain anchor.
+     */
+    private async verifyPolicyAnchor() {
+        if (!this.policyRegistry) return;
+
+        try {
+            console.log("[AgentWallet] Verifying policy against on-chain anchor...");
+            const onChain = await this.policyRegistry.getPolicy(this.address);
+
+            // Check 1: Freeze status
+            if (onChain.isFrozen) {
+                this.stopped = true;
+                throw new Error("Agent policy is FROZEN on-chain. Emergency stop activated.");
+            }
+
+            // Check 2: Hash mismatch
+            const localHash = hashPolicy(this.config);
+
+            // Note: We check if on-chain hash is set (non-zero) before enforcing
+            if (onChain.policyHash !== ethers.ZeroHash && onChain.policyHash !== localHash) {
+                const msg = `Policy Hash Mismatch! Local: ${localHash}, Chain: ${onChain.policyHash}`;
+                if (this.config?.strictPolicy) {
+                    throw new Error(msg);
+                } else {
+                    console.warn(`[AgentWallet] WARN: ${msg}. Running in PERMISSIVE mode.`);
+                }
+            } else {
+                console.log("[AgentWallet] ✅ Policy verified on-chain.");
+            }
+        } catch (error: any) {
+            console.error("[AgentWallet] Anchor check failed:", error.message);
+            if (this.config?.strictPolicy) throw error;
         }
     }
 

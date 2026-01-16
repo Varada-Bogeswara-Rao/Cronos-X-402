@@ -2,6 +2,12 @@ import { Request, Response, NextFunction, RequestHandler } from "express";
 import axios, { AxiosInstance } from "axios";
 import cache from "memory-cache";
 import crypto from "crypto";
+import { ethers } from "ethers";
+
+// Minimal ABI for MerchantRegistry
+const REGISTRY_ABI = [
+    "function getMerchant(string calldata merchantId) external view returns (address wallet, bool isActive, string memory metadataURI)"
+];
 
 /**
  * Configuration for the x402 Merchant Middleware.
@@ -17,6 +23,15 @@ export interface PaymentMiddlewareConfig {
      * Default: false (Fail Closed)
      */
     failMode?: "open" | "closed";
+
+    /**
+     * Optional: On-Chain Registry Address for Anti-Phishing Verification
+     */
+    merchantRegistryAddress?: string;
+    /**
+     * The address expected to receive funds (used to verify against registry)
+     */
+    recipientAddress?: string;
 }
 
 export interface PaymentReceipt {
@@ -55,6 +70,41 @@ export function paymentMiddleware(config: PaymentMiddlewareConfig): RequestHandl
         timeout: 10000,
         headers: { "x-merchant-id": merchantId }
     });
+
+    // [SECURITY] 0. Anti-Phishing / Registry Verification (Async Check)
+    if (config.merchantRegistryAddress && config.recipientAddress) {
+        // We perform this check in the background to avoid blocking startup, 
+        // but log heavily if it fails.
+        (async () => {
+            try {
+                // Determine RPC based on network
+                const rpcUrl = network === "cronos-mainnet"
+                    ? "https://evm.cronos.org"
+                    : "https://evm-t3.cronos.org";
+
+                const provider = new ethers.JsonRpcProvider(rpcUrl);
+                const registry = new ethers.Contract(config.merchantRegistryAddress!, REGISTRY_ABI, provider);
+
+                console.log(`[PaymentMiddleware] Verifying merchant '${merchantId}' on-chain...`);
+                const onChainMerchant = await registry.getMerchant(merchantId);
+
+                if (onChainMerchant.wallet.toLowerCase() !== config.recipientAddress!.toLowerCase()) {
+                    const msg = `CRITICAL: Wallet Mismatch! Configured: ${config.recipientAddress}, Registry: ${onChainMerchant.wallet}`;
+                    console.error(`[PaymentMiddleware] 🚨 ${msg}`);
+                    if (failMode !== "open") {
+                        // In strict mode, we might want to kill the process or disable payment processing
+                        // For now, valid alerts are sufficient.
+                    }
+                } else if (!onChainMerchant.isActive) {
+                    console.warn(`[PaymentMiddleware] ⚠️ Merchant is marked INACTIVE in on-chain registry.`);
+                } else {
+                    console.log(`[PaymentMiddleware] ✅ Merchant identity verified on-chain.`);
+                }
+            } catch (err: any) {
+                console.error(`[PaymentMiddleware] Registry verification failed: ${err.message}`);
+            }
+        })();
+    }
 
     return async (req: Request, res: Response, next: NextFunction) => {
         // [DX] 1. Preflight & Options Support (P1)

@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { ethers } from 'ethers';
 import connectDB from './db';
+import { paymentMiddleware } from 'cronos-merchant-payment-middleware';
 
 // Import your routes
 import merchantRoutes from './routes/merchantRoutes';
@@ -14,6 +15,9 @@ import verifyPayment from './facilitator/verifyPayment';
 import sandboxRouter from "./routes/sandbox";
 
 dotenv.config();
+
+// Determine Gateway URL (Mock for demo)
+const gatewayUrl = process.env.GATEWAY_URL || "http://localhost:5000";
 
 // 1. Environment Validation
 const requiredEnv = ['MONGODB_URI', 'CRONOS_RPC_URL'];
@@ -60,6 +64,20 @@ app.use('/api/sandbox', sandboxRouter); // [SECURE] Sandbox namespace
 app.get('/', (req: Request, res: Response) => {
   res.json({ status: 'online', service: 'Cronos Merchant Gateway' });
 });
+
+// 2. x402 Payment Middleware
+// Enforces payment for any route under /api/premium
+app.use("/api/premium", paymentMiddleware({
+  merchantId: "merchant_01", // Demo Merchant ID
+  gatewayUrl: gatewayUrl,    // Self-referential for demo
+  facilitatorUrl: gatewayUrl,
+  network: "cronos-testnet",
+  merchantRegistryAddress: "0x1948175dDB81DA08a4cf17BE4E0C95B97dD11F5c",
+  recipientAddress: process.env.FACILITATOR_PRIVATE_KEY
+    ? new ethers.Wallet(process.env.FACILITATOR_PRIVATE_KEY).address
+    : undefined, // Used for anti-phishing verify
+  failMode: "closed"
+}));
 
 // [OBSERVABILITY] Health Check (P2)
 app.get('/health', async (req: Request, res: Response) => {

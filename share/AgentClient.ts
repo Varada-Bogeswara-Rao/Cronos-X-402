@@ -39,12 +39,9 @@ export class AgentClient {
     this.wallet = new AgentWallet(
       executor.getAddress(),
       executor,
-      {
-        dailyLimit: config.dailyLimit,
-        maxPerTransaction: config.maxPerTransaction,
-        trustedFacilitators: config.trustedFacilitators,
-        allowedMerchants: config.allowedMerchants,
-      }
+      executor.getProvider(),
+      executor.getSigner(),
+      config
     );
 
     // 3. Context passed per request
