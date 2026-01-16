@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "prebuild": "cd ../payment-middleware && npm install && npm run build",
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"
