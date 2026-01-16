@@ -97,15 +97,24 @@ async function main() {
 | `trustedFacilitators` | `string[]` | No | List of Gateway URLs to trust (e.g., localhost). |
 
 ## 🛡️ Security Workflow (Strict Mode)
-
-When `strictPolicy` is `true`, you must register your configuration hash on-chain whenever you change limits.
-
+	
+When `strictPolicy` is `true` (default), you must register your configuration hash on-chain whenever you change limits.
+	
 1.  **Define Limits**: Set `dailyLimit` in your code.
-2.  **Seal Policy**: Run the setup script to write the hash to the `AgentPolicyRegistry`.
-    ```bash
-    npx ts-node set_policy.ts
-    ```
-3.  **Run Agent**: The Agent verifies `Local Hash == On-Chain Hash` before making any payment.
+2.  **Seal Policy**: Use the Admin helper to write the hash to the chain.
+	
+```typescript
+import { AgentAdmin } from "@cronos-merchant/sdk";
+
+await AgentAdmin.setPolicy({
+  privateKey: process.env.AGENT_KEY
+}, {
+  dailyLimit: 0.5,
+  maxPerTransaction: 0.5
+});
+```
+	
+3.  **Run Agent**: The Agent checks `Local Limit == On-Chain Limit` before spending.
 
 ## API Reference
 
