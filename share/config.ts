@@ -31,5 +31,6 @@ export const AGENT_CONFIG_DEFAULTS = {
     merchantRegistry: "0x1948175dDB81DA08a4cf17BE4E0C95B97dD11F5c",
     agentPolicyRegistry: "0xce3b58c9ae8CA4724d6FA8684d2Cb89546FF4E43",
     policyVerifier: "0xFCb2D2279256B62A1E4E07BCDed26B6546bBc33b"
-  }
+  },
+  strictPolicy: true // 🛡️ ENFORCE: Agent will fail if policy hash mismatches chain
 };

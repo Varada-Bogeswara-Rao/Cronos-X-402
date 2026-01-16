@@ -90,8 +90,22 @@ async function main() {
 | `chainId` | `number` | Yes | Chain ID (e.g., 338). Sent to backend for negotiation. |
 | `usdcAddress` | `string` | Yes | ERC20 Token Address used for payment. |
 | `dailyLimit` | `number` | No | Max USDC allowed to spend per 24h. Default: 1.0 |
+| `strictPolicy` | `boolean` | No | If `true`, Agent crashes if local config hash != on-chain hash. Default: `true`. |
+| `anchors` | `object` | No | On-chain registry addresses. Auto-filled for Cronos Testnet. |
+| `analyticsUrl` | `string` | No | URL for centralized logging of payment decisions (e.g. `https://api.myapp.com/analytics`). |
 | `allowedMerchants` | `string[]` | No | List of Merchant IDs to trust. If empty, allows all. |
 | `trustedFacilitators` | `string[]` | No | List of Gateway URLs to trust (e.g., localhost). |
+
+## 🛡️ Security Workflow (Strict Mode)
+
+When `strictPolicy` is `true`, you must register your configuration hash on-chain whenever you change limits.
+
+1.  **Define Limits**: Set `dailyLimit` in your code.
+2.  **Seal Policy**: Run the setup script to write the hash to the `AgentPolicyRegistry`.
+    ```bash
+    npx ts-node set_policy.ts
+    ```
+3.  **Run Agent**: The Agent verifies `Local Hash == On-Chain Hash` before making any payment.
 
 ## API Reference
 
