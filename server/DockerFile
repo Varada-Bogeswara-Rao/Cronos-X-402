@@ -8,7 +8,7 @@ WORKDIR /usr/src/app
 COPY payment-middleware ./payment-middleware
 WORKDIR /usr/src/app/payment-middleware
 # Install deps, build, and PACK into tarball
-RUN npm install && npm run build && npm pack
+RUN npm install && npm run build
 
 # 2. Build Server
 WORKDIR /usr/src/app/server
@@ -18,10 +18,8 @@ COPY server/package.json ./
 # Copy server source and build
 COPY server/ .
 
-# Install server dependencies (will link to ../payment-middleware initially)
+# Install server dependencies
 RUN npm install
-# OVERRIDE with packed tarball to ensure valid files in container
-RUN npm install ../payment-middleware/*.tgz
 RUN npm run build
 
 # Step 2: Production Stage
