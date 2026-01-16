@@ -77,7 +77,7 @@ app.use("/api/premium", paymentMiddleware({
     ? new ethers.Wallet(process.env.FACILITATOR_PRIVATE_KEY).address
     : undefined, // Used for anti-phishing verify
   failMode: "closed"
-}));
+}) as any);
 
 // [OBSERVABILITY] Health Check (P2)
 app.get('/health', async (req: Request, res: Response) => {
