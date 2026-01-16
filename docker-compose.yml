@@ -6,10 +6,10 @@ services:
     volumes:
       - mongo-data:/data/db
 
-  gateway-server:
+    gateway-server:
     build:
       context: .
-      dockerfile: server/DockerFile
+      dockerfile: Dockerfile
     ports:
       - "5000:5000"
     environment:
