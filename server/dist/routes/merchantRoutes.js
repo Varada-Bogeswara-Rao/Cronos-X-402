@@ -194,8 +194,8 @@ router.post("/:merchantId/routes", verifyWalletSignature, async (req, res) => {
         if (!method || !path || !price || !currency) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
-        if (currency !== 'USDC') {
-            return res.status(400).json({ message: 'Only USDC is supported at this time' });
+        if (!['USDC', 'CRO'].includes(currency)) {
+            return res.status(400).json({ message: 'Only USDC and CRO are supported at this time' });
         }
         const cleanPath = canonicalizePath(path);
         const merchant = await Merchant_1.default.findOne({ merchantId });

@@ -1,6 +1,6 @@
 {
   "name": "cronos-merchant-payment-middleware",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Express middleware to enforce x402 payments for APIs on Cronos",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
