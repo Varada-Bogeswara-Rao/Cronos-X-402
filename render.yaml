@@ -2,7 +2,6 @@ services:
   - type: web
     name: cronos-merchant-gateway
     env: docker
-    plan: free
     dockerFilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
