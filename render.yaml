@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: cronos-merchant-gateway
+    env: docker
+    plan: free
+    dockerFilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: CRONOS_RPC_URL
+        value: https://evm-t3.cronos.org
+      - key: FACILITATOR_PRIVATE_KEY
+        sync: false
+      - key: PORT
+        value: 5000
