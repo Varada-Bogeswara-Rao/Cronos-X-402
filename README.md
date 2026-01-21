@@ -1,4 +1,4 @@
-# 🤖 Cronos Merchant Gateway (x402)
+# <img src="assets/logo.jpg" alt="Cronos Merchant Gateway Logo" height="100" /> <br/> Cronos Merchant Gateway (x402)
 
 **The Payment Layer for the Machine-to-Machine (M2M) Economy.**
 
