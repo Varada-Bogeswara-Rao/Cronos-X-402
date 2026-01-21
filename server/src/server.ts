@@ -72,7 +72,7 @@ app.use("/api/premium", paymentMiddleware({
   gatewayUrl: gatewayUrl,    // Self-referential for demo
   facilitatorUrl: gatewayUrl,
   network: "cronos-testnet",
-  merchantRegistryAddress: "0x1948175dDB81DA08a4cf17BE4E0C95B97dD11F5c",
+  // merchantRegistryAddress: "0x1948175dDB81DA08a4cf17BE4E0C95B97dD11F5c",
   recipientAddress: process.env.FACILITATOR_PRIVATE_KEY
     ? new ethers.Wallet(process.env.FACILITATOR_PRIVATE_KEY).address
     : undefined, // Used for anti-phishing verify
