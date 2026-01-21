@@ -22,25 +22,8 @@ The `cronos-agent-wallet` SDK equips AI agents with a crypto wallet and the inte
 
 ### Architecture
 
-```mermaid
-graph TD
-    subgraph Agent SDK
-      Local[Local Policy Engine]
-      Anchor[On-Chain Policy Anchor (read-only)]
-      Executor[x402 Payment Executor]
-    end
+> **Note:** For the full Architecture Diagram, please [view the README on GitHub](https://github.com/Varada-Bogeswara-Rao/Cronos-X-402/blob/main/README.md#%EF%B8%8F-architecture).
 
-    subgraph Merchant Middleware
-      MRegistry[Merchant Registry (read-only)]
-      Verifier[x402 Verification]
-    end
-
-    Local -->|Checks Hash| Anchor
-    Local -->|Approves| Executor
-    Executor -->|Signed Claim| Verifier
-    Verifier -->|Verifies Identity| MRegistry
-    Verifier -->|Payment Tx| Cronos[Cronos EVM]
-```
 
 ---
 
