@@ -63,7 +63,7 @@ const CONFIG = {
   chainId: 338,
   usdc: "0xc01...", // USDC contract address
   limits: { daily: 10, perTx: 1 },
-  analyticsUrl: "https://your-analytics.com/api" // Optional logging
+  analyticsUrl: "https://cronos-x-402.onrender.com/api/analytics" // Optional logging
 };
 
 async function main() {
@@ -90,7 +90,7 @@ async function main() {
       method: "POST",
       body: { prompt: "Hello World" }
     });
-    });
+
 
     console.log("Success:", response);
   } catch (err: any) {
