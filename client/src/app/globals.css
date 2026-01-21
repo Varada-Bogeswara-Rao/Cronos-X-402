@@ -1,33 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #050505;
-    --foreground: #ededed;
-  }
+  --background: #000000;
+  --foreground: #ffffff;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  color: rgb(255, 255, 255);
+  background: black;
+  font-family: Arial, Helvetica, sans-serif;
   min-height: 100vh;
-  background-image:
-    radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
-  background-attachment: fixed;
 }
 
 @utility glass-panel {

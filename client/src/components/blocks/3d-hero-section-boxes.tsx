@@ -83,11 +83,11 @@ function CodeShowcase() {
                 </div>
             </div>
             <div className="text-center mt-6">
-                <p className="text-sm text-gray-500">
-                    {activeTab === 'merchant'
+                 <p className="text-sm text-gray-500">
+                     {activeTab === 'merchant'
                         ? "Install: npm install cronos-merchant-payment-middleware"
                         : "Install: npm install cronos-agent-wallet"}
-                </p>
+                 </p>
             </div>
         </div>
     );
@@ -134,8 +134,8 @@ function HeroContent() {
 
             <div className="w-full lg:w-1/2 pr-0 lg:pr-8 mb-8 lg:mb-0">
                 <div className="flex items-center space-x-4 mb-6">
-                    <img src="/logo.jpg" alt="Logo" className="w-16 h-16 rounded-full border-2 border-white/20" />
-                    <span className="text-xl font-mono text-blue-400">Cronos x402 Gateway</span>
+                     <img src="/logo.jpg" alt="Logo" className="w-16 h-16 rounded-full border-2 border-white/20" />
+                     <span className="text-xl font-mono text-blue-400">Cronos x402 Gateway</span>
                 </div>
                 <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 leading-tight tracking-wide">
                     Payment Layer for<br />
@@ -165,6 +165,87 @@ function HeroContent() {
             </div>
 
         </div>
+    );
+}
+
+function HowItWorks() {
+    const steps = [
+        {
+            icon: "🤖",
+            title: "1. Agent Requests",
+            desc: "AI Agent attempts to access your premium API endpoint."
+        },
+        {
+            icon: "🛑",
+            title: "2. 402 Challenge",
+            desc: "Middleware intercepts and returns HTTP 402 with price & nonce."
+        },
+        {
+            icon: "💸",
+            title: "3. Auto-Payment",
+            desc: "Agent SDK signs and broadcasts USDC payment on Cronos."
+        },
+        {
+            icon: "🔓",
+            title: "4. Access Granted",
+            desc: "Middleware verifies tx on-chain and serving the response."
+        }
+    ];
+
+    return (
+        <div className="py-24 border-t border-white/10">
+            <h2 className="text-3xl font-bold mb-12 text-center text-white">How It Works</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                {steps.map((step, i) => (
+                    <div key={i} className="relative p-6 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
+                        <div className="text-4xl mb-4">{step.icon}</div>
+                        <h3 className="text-xl font-bold mb-2 text-white">{step.title}</h3>
+                        <p className="text-sm text-gray-400">{step.desc}</p>
+                        {i < 3 && (
+                            <div className="hidden lg:block absolute -right-3 top-1/2 transform -translate-y-1/2 z-10">
+                                <ArrowRight className="text-gray-600" />
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function Footer() {
+    return (
+        <footer className="w-full border-t border-white/10 bg-black text-gray-400 py-12">
+             <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
+                 <div className="col-span-1 md:col-span-2">
+                     <div className="flex items-center space-x-2 mb-4">
+                         <img src="/logo.jpg" alt="Logo" className="w-8 h-8 rounded-full" />
+                         <span className="text-white font-bold">Cronos x402</span>
+                     </div>
+                     <p className="text-sm max-w-xs">
+                         Building the Machine-to-Machine economy on the Cronos EVM chain. Open Source. Zero Trust.
+                     </p>
+                 </div>
+                 <div>
+                     <h4 className="text-white font-bold mb-4">Resources</h4>
+                     <ul className="space-y-2 text-sm">
+                         <li><a href="https://github.com/Varada-Bogeswara-Rao/Cronos-X-402" className="hover:text-blue-400">GitHub Repo</a></li>
+                         <li><a href="https://www.npmjs.com/package/cronos-agent-wallet" className="hover:text-blue-400">Agent SDK</a></li>
+                         <li><a href="https://www.npmjs.com/package/cronos-merchant-payment-middleware" className="hover:text-blue-400">Merchant Middleware</a></li>
+                     </ul>
+                 </div>
+                 <div>
+                     <h4 className="text-white font-bold mb-4">Community</h4>
+                     <ul className="space-y-2 text-sm">
+                         <li><a href="https://cronos.org" className="hover:text-blue-400">Cronos Chain</a></li>
+                         <li><a href="https://dorahacks.io" className="hover:text-blue-400">DoraHacks</a></li>
+                     </ul>
+                 </div>
+             </div>
+             <div className="max-w-7xl mx-auto px-6 mt-12 pt-8 border-t border-white/5 text-xs text-center">
+                 © 2026 Cronos x402 Gateway. Built for the Agentic Intelligence Hackathon.
+             </div>
+        </footer>
     );
 }
 
@@ -210,24 +291,27 @@ const HeroSection = () => {
                         Merchants get paid. Agents get access. The blockchain handles the trust.
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-                        <div className="p-6 border border-white/10 rounded-xl bg-white/5">
-                            <h3 className="text-xl font-bold mb-2">🤖 Agent Wallet SDK</h3>
-                            <p className="text-sm opacity-70">Self-custodial policy engine that lets AI agents pay autonomously with safety limits.</p>
-                        </div>
-                        <div className="p-6 border border-white/10 rounded-xl bg-white/5">
-                            <h3 className="text-xl font-bold mb-2">⚡ Payment Middleware</h3>
-                            <p className="text-sm opacity-70">Monetize any API with a single line of code. Verifies payments on Cronos.</p>
-                        </div>
-                        <div className="p-6 border border-white/10 rounded-xl bg-white/5">
-                            <h3 className="text-xl font-bold mb-2">🔒 On-Chain Registry</h3>
-                            <p className="text-sm opacity-70">Merchant identity and agent policies are anchored on-chain for zero-trust security.</p>
-                        </div>
+                         <div className="p-6 border border-white/10 rounded-xl bg-white/5">
+                             <h3 className="text-xl font-bold mb-2">🤖 Agent Wallet SDK</h3>
+                             <p className="text-sm opacity-70">Self-custodial policy engine that lets AI agents pay autonomously with safety limits.</p>
+                         </div>
+                         <div className="p-6 border border-white/10 rounded-xl bg-white/5">
+                             <h3 className="text-xl font-bold mb-2">⚡ Payment Middleware</h3>
+                             <p className="text-sm opacity-70">Monetize any API with a single line of code. Verifies payments on Cronos.</p>
+                         </div>
+                         <div className="p-6 border border-white/10 rounded-xl bg-white/5">
+                             <h3 className="text-xl font-bold mb-2">🔒 On-Chain Registry</h3>
+                             <p className="text-sm opacity-70">Merchant identity and agent policies are anchored on-chain for zero-trust security.</p>
+                         </div>
                     </div>
-
+                    
                     <CodeShowcase />
 
+                    <HowItWorks />
                 </div>
             </div>
+
+            <Footer />
         </div>
     );
 };
