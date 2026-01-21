@@ -1,8 +1,97 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Spline from '@splinetool/react-spline';
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Terminal, Check, Copy } from "lucide-react";
+
+const CODE_EXAMPLES = {
+    merchant: `// server.ts (Express)
+import { paymentMiddleware } from "cronos-merchant-payment-middleware";
+
+// Monetize any route with one line of code
+app.use("/api/premium", paymentMiddleware({
+  merchantId: "my_business",
+  recipientAddress: "0x123...",
+  gatewayUrl: "https://cronos-x-402.onrender.com",
+  network: "cronos-testnet"
+}));`,
+    agent: `// agent.ts (TypeScript)
+import { AgentClient } from "cronos-agent-wallet";
+
+// Self-custodial policy engine
+const agent = new AgentClient({
+  privateKey: process.env.KEY,
+  dailyLimit: 10, // Max 10 USDC/day
+});
+
+// Automatically handles 402 payment challenges
+const data = await agent.fetch("https://api.com/premium");`
+};
+
+function CodeShowcase() {
+    const [activeTab, setActiveTab] = useState<'merchant' | 'agent'>('merchant');
+    const [copied, setCopied] = useState(false);
+
+    const copyCode = () => {
+        navigator.clipboard.writeText(CODE_EXAMPLES[activeTab]);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <div className="w-full max-w-4xl mx-auto mt-24">
+            <div className="flex flex-col items-center mb-10">
+                <div className="inline-flex bg-white/10 p-1 rounded-lg backdrop-blur-sm border border-white/10">
+                    <button
+                        onClick={() => setActiveTab('merchant')}
+                        className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'merchant' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        For Merchants
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('agent')}
+                        className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'agent' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        For Agents
+                    </button>
+                </div>
+            </div>
+
+            <div className="relative rounded-xl overflow-hidden border border-white/20 bg-[#0d1117] shadow-2xl">
+                <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/10">
+                    <div className="flex items-center space-x-2">
+                        <Terminal className="w-4 h-4 text-gray-400" />
+                        <span className="text-xs font-mono text-gray-400">
+                            {activeTab === 'merchant' ? 'server.ts' : 'agent.ts'}
+                        </span>
+                    </div>
+                    <button onClick={copyCode} className="text-gray-400 hover:text-white transition-colors">
+                        {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                </div>
+                <div className="p-6 overflow-x-auto">
+                    <pre className="font-mono text-sm leading-relaxed">
+                        <code className="language-typescript text-gray-300">
+                            {CODE_EXAMPLES[activeTab].split('\n').map((line, i) => (
+                                <div key={i} className="table-row">
+                                    <span className="table-cell select-none text-gray-600 w-8 pr-4 text-right opacity-50">{i + 1}</span>
+                                    <span className="table-cell">{line}</span>
+                                </div>
+                            ))}
+                        </code>
+                    </pre>
+                </div>
+            </div>
+            <div className="text-center mt-6">
+                <p className="text-sm text-gray-500">
+                    {activeTab === 'merchant'
+                        ? "Install: npm install cronos-merchant-payment-middleware"
+                        : "Install: npm install cronos-agent-wallet"}
+                </p>
+            </div>
+        </div>
+    );
+}
 
 function HeroSplineBackground() {
     return (
@@ -134,6 +223,9 @@ const HeroSection = () => {
                             <p className="text-sm opacity-70">Merchant identity and agent policies are anchored on-chain for zero-trust security.</p>
                         </div>
                     </div>
+
+                    <CodeShowcase />
+
                 </div>
             </div>
         </div>

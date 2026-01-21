@@ -2,17 +2,32 @@
 
 **The Payment Layer for the Machine-to-Machine (M2M) Economy.**
 
-This repository contains a complete ecosystem for enabling **Autonomous AI Agents** to pay for API access using **USDC on Cronos**. It implements the **HTTP 402 Payment Required** protocol to create a seamless, zero-interaction payment flow between robots and services.
+> **🛑 The Problem:** Autonomous AI Agents cannot easily pay for resources. They struggle with credit card KYCs, cannot click "Buy Now" buttons, and relying on human owners to top up balances manually is slow and unscalable.
+>
+> **✅ The Solution:** A specialized payment gateway implementing the **HTTP 402 Payment Required** standard. It allows agents to stream USDC payments instantly on the Cronos EVM chain, verified by a policy engine that prevents wallet draining.
 
 ---
 
-## � Hackathon Alignment
+## 🏆 Hackathon Alignment
 
-This project is built directly for the **Cronos "Agentic Intelligence" Hackathon**, targeting:
+This project is built directly for the **Cronos "Agentic Intelligence" Hackathon**:
 
 -   **Main Track – x402 Applications**: We enable autonomous agents to pay for APIs via HTTP 402 and on-chain settlement.
 -   **Agentic Finance Track**: Our `Cronos-Agent-Wallet` is a policy-aware smart wallet with self-custodial spending guardrails.
--   **Dev Tooling Track**: We provide plug-and-play middleware + SDKs for instant API monetization.
+-   **Dev Tooling Track**: We provide plug-and-play middleware + SDKs to monetize any API in minutes.
+
+---
+
+## 🔗 Live Contracts (Cronos Testnet)
+
+All core infrastructure is deployed and live on the Cronos Testnet (Chain ID: 338).
+
+| Contract | Address | Description |
+| :--- | :--- | :--- |
+| **MerchantRegistry** | [`0x1948175dDB81DA08a4cf17BE4E0C95B97dD11F5c`](https://explorer.cronos.org/testnet/address/0x1948175dDB81DA08a4cf17BE4E0C95B97dD11F5c) | Maps generic `merchantId` strings to EVM payment addresses. |
+| **AgentPolicyRegistry** | [`0xce3b58c9ae8CA4724d6FA8684d2Cb89546FF4E43`](https://explorer.cronos.org/testnet/address/0xce3b58c9ae8CA4724d6FA8684d2Cb89546FF4E43) | Stores unbreakable spending limits (Daily Limit, Max Per Tx) for every agent. |
+| **PolicyVerifier** | [`0xFCb2D2279256B62A1E4E07BCDed26B6546bBc33b`](https://explorer.cronos.org/testnet/address/0xFCb2D2279256B62A1E4E07BCDed26B6546bBc33b) | Stateless logic contract to validate payments against policies. |
+| **USDC (Testnet)** | `0x6a...` (Standard) | The currency of settlement. |
 
 ---
 
@@ -50,14 +65,24 @@ graph TD
     Middleware -->|Verifies Tx| Verifier
 ```
 
-### 📂 Repository Structure
+---
 
-| Folder | Package Name | Description |
+## 📡 API Endpoints (Merchant Facilitator)
+
+The Facilitator Server (`/server`) acts as the gateway. Key endpoints include:
+
+### 💰 Monetized Routes (Middleware Demo)
+| Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| **`client`** | `client` | **Merchant Dashboard** (Next.js). UI for merchants to view sales, analytics, and register. |
-| **`server`** | `server` | **The "Facilitator"**. An Express backend that verifies on-chain transactions and serves the API. |
-| **`share`** | `cronos-agent-wallet` | **Agent SDK**. A crypto wallet for AI agents that handles "402 Payment Required" challenges automatically. |
-| **`payment-middleware`** | `cronos-merchant-payment-middleware` | **Middleware**. A plug-and-play Express tool to monetize any API route instantly. |
+| `POST` | `/api/premium` | **The Core 402 Demo.** protected by middleware. Returns `402 Payment Required` until a valid payment is attached. |
+
+### 🛠️ Core Infrastructure
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/merchants/register` | Registers a new merchant identity on Cronos. |
+| `POST` | `/api/price-check` | Dynamic pricing engine. Determines cost based on agent reputation/load. |
+| `POST` | `/api/facilitator/verify` | **The Callback.** Verifies an on-chain Transaction Hash provided by an agent. |
+| `GET` | `/api/analytics/history` | Fetches payment history for the dashboard charts. |
 
 ---
 
@@ -65,37 +90,11 @@ graph TD
 
 1.  **Merchant registers** identity on Cronos (via Dashboard).
 2.  **Merchant wraps** their API with our payment middleware.
-3.  **Agent calls API** and receives `HTTP 402 Payment Required`.
-4.  **Agent SDK verifies** its own on-chain policy (budget) & the price.
-5.  **Agent executes** an on-chain USDC payment.
-6.  **API request retries** automatically with payment proof and succeeds.
-
----
-
-## ⚖️ Why On-Chain + Off-Chain?
-
-We use a hybrid architecture to balance **security** with **performance**:
-
-*   **On-Chain (Cronos EVM):** Handles critical trust layers—Merchant Identity, Agent Policy (Spend Limits), and final Value Settlement. This ensures no one can spoof an identity or overspend a budget.
-*   **Off-Chain (Middleware/DB):** Handles high-frequency API gating, nonce generation, and state tracking. This ensures APIs remain fast (<100ms) without waiting for block confirmations for every single packet, while still cryptographically verifying every payment.
-
----
-
-## 🔗 On-Chain Components
-
-*   **`MerchantRegistry`**: The on-chain source of truth for merchant identities and receiving addresses.
-*   **`AgentPolicyRegistry`**: Stores hash commitments of agent spending policies (Daily Limit / Max Per Tx), ensuring agents cannot be hijacked to drain wallets.
-*   **`PolicyVerifier`**: A stateless contract used to valid policy compliance on-chain.
-
----
-
-## ✨ Key Features
-
-*   **🤖 Autonomous Payments**: AI Agents can negotiate and pay for resources without human intervention.
-*   **🛡️ Zero-Trust Security**: The server never trusts the client. All payments are verified directly on the Cronos blockchain.
-*   **🔒 Replay Protection**: Every transaction is bound to a specific request nonce, preventing replay attacks.
-*   **📊 Basic Analytics**: Visualize your revenue, track payment conversion rates, and monitor agent activity.
-*   **🌍 Multi-Chain Ready**: Architecture supports expansion to other EVM chains (currently optimized for Cronos).
+3.  **Agent calls API** (`/api/premium`) and receives `HTTP 402 Payment Required` + `X-Payment-Address` + `Price`.
+4.  **Agent SDK verifies** its own on-chain policy (budget) & the invoice integrity.
+5.  **Agent executes** an on-chain USDC payment to the Merchant's address.
+6.  **Agent retries** the request, attaching the `X-Payment-Tx-Hash`.
+7.  **Middleware verifies** the transaction on-chain via the Facilitator and serves the resource.
 
 ---
 
@@ -109,14 +108,13 @@ We use a hybrid architecture to balance **security** with **performance**:
 ### 2. Installation
 Install dependencies for all packages:
 ```bash
-# Install root dependencies (if any)
+# Install root dependencies
 npm install
 
 # Install submodule dependencies
 cd client && npm install
 cd ../server && npm install
 cd ../share && npm install
-cd ../payment-middleware && npm install
 ```
 
 ### 3. Running Locally
@@ -124,7 +122,7 @@ cd ../payment-middleware && npm install
 **Start the Backend (Facilitator):**
 ```bash
 cd server
-cp .env.example .env # Configure your MONGO_URI and PRIVATE_KEY
+cp .env.example .env # Configure MONGO_URI and PRIVATE_KEY
 npm run dev
 # Running on http://localhost:5000
 ```
@@ -149,5 +147,4 @@ This repository publishes two core packages to NPM:
 ---
 
 ## 📜 License
-
 MIT © 2026. Built for the Cronos Ecosystem.
