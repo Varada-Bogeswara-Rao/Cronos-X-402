@@ -47,6 +47,7 @@ export class AgentWallet {
         "http://localhost:3000",
         "https://agentx402.onrender.com",
         "https://cronos-x-402-production.up.railway.app",
+        "https://cronos-x-402.onrender.com",
     ]);
 
     private stopped = false;
