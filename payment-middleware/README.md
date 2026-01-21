@@ -46,8 +46,8 @@ const app = express();
 app.use(
   paymentMiddleware({
     merchantId: "merchant_123",
-    gatewayUrl: "https://your-gateway.domain",
-    facilitatorUrl: "https://your-facilitator.domain",
+    gatewayUrl: "https://cronos-x-402.onrender.com",
+    facilitatorUrl: "https://cronos-x-402.onrender.com",
     network: "cronos-testnet"
   })
 );
@@ -100,7 +100,7 @@ X-Payment-Currency: USDC
 X-Payment-Network: cronos-testnet
 X-Payment-PayTo: 0xMerchantWallet
 X-Merchant-ID: merchant_123
-X-Facilitator-URL: https://facilitator.domain
+X-Facilitator-URL: https://cronos-x-402.onrender.com
 X-Nonce: abc123...
 X-Chain-ID: 338
 X-Route: GET /premium-data

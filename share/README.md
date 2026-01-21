@@ -86,9 +86,10 @@ async function main() {
     });
 
     // 3. Fetch paid resources
-    const response = await agent.fetch("http://localhost:3000/premium", {
+    const response = await agent.fetch("https://cronos-x-402.onrender.com/api/premium", {
       method: "POST",
       body: { prompt: "Hello World" }
+    });
     });
 
     console.log("Success:", response);
